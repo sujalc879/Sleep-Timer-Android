@@ -4,7 +4,7 @@ Planning date: 2026-11-03 (Asia/Kolkata).
 
 ## Scope and current gate
 
-The owner requested an environment check followed by **planning only**, then a stop for review. This task does not implement the rest of Phase 0. The full Foundation phase remains incomplete until its build, static checks, and runtime checks are actually performed. See [PROGRESS.md](PROGRESS.md) for the current handoff and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
+The owner reviewed the initial planning checkpoint and authorized the remaining **Phase 0 Foundation implementation**. This scope stops before timer/playback features. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
 
 The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../design) visually inspected. The PDF duplicates those references. The product priority is reliable playback stopping, followed by safe volume handling, platform-native presentation, accessibility, and low battery use. A disconnected phone does not block implementation; unavailable runtime tests are reported as skipped.
 
@@ -163,4 +163,4 @@ Physical shake traces, overnight timing, OEM survival, hearing-safety/Bluetooth 
 
 The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Foundation planning. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
 
-Next action after the owner reviews this plan is **the remaining Phase 0 Foundation implementation**, not Phase 1. Stop here in this task.
+The owner authorized Foundation after reviewing this plan. Complete its available checks and report deferred runtime gates, then stop before Phase 1. PROGRESS identifies the next authorized phase and remaining evidence.

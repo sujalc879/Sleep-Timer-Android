@@ -4,7 +4,7 @@ Recorded 2026-11-03 (Asia/Kolkata). “Accepted” describes the planned design,
 
 ## D001 — Respect the documentation-only checkpoint
 
-**Accepted.** The owner's latest scope narrows Phase 0 to environment confirmation, ignored SDK configuration and planning. Do not generate a wrapper, catalog, module, screen or setup script in this task. Maintain PROGRESS as required by the repository brief. Full Phase 0 remains pending; no build/test pass is claimed.
+**Historical checkpoint, satisfied.** The owner initially narrowed Phase 0 to environment confirmation, ignored SDK configuration and planning. That checkpoint was committed as `95d885e` without implementation. The owner subsequently authorized the remaining Foundation work; D021 records that scope. Maintain PROGRESS with actual observed checks.
 
 ## D002 — Reuse the installed SDK and JDK
 
@@ -130,6 +130,60 @@ Keep Android 15 notification fallback as a required path. Promotion is a system 
 
 ## D020 — Honest completion and remaining unknowns
 
-**Accepted.** Documentation and environment checks cannot establish app correctness, overnight survival, real shake thresholds, Bluetooth safety, DND behavior, OEM behavior or release performance. Full Phase 0 must add the wrapper/catalog/modules/theme/navigation and pass its available checks. Runtime checks remain pending when a device/emulator is unavailable; do not relabel them passed.
+**Accepted.** Foundation host checks cannot establish overnight survival, real shake thresholds, Bluetooth safety, DND behavior, OEM behavior or release performance. Foundation adds the wrapper/catalog/modules/theme/navigation and runs available checks. Runtime checks remain pending when a device/emulator is unavailable; do not relabel them passed. Actual outcomes are in PROGRESS.
 
-No further product answer is needed for Foundation. Production application ID, publisher and signing identity remain release inputs. Remaining dependency versions (Hilt/KSP/DataStore/adaptive/Glance/quality/testing libraries) are intentionally not guessed here: verify latest stable coordinates and compatibility when writing the catalog. The plan is concrete, but the implementation and all behavioral evidence are still future work.
+No further product answer is needed for Foundation. Production application ID, publisher and signing identity remain release inputs. The Foundation catalog now pins verified dependency versions; future feature behavior remains unimplemented.
+
+## D021 — Implement only the approved Foundation
+
+**Accepted.** The owner's continuation authorizes build logic, listed module boundaries, theme, symbols/icons, splash, edge-to-edge and a two-destination navigation shell. Empty themed screen bodies are explicitly the Foundation deliverable in §13; do not add fake timer state, inactive feature buttons or simulated playback. Data/timer/system/surface/testplayer/benchmark modules contain build boundaries only until their phases.
+
+Use provisional development namespace/application ID `com.sujal.sleeptimer`, with `.debug` application suffix. This does not settle production publisher identity. Keep testplayer release variants disabled and no dependency from the app to that test tool.
+
+## D022 — Pin current artifacts and verify the actual combination
+
+**Accepted.** Official Gradle release metadata selects **9.8.2**, newer than AGP's 9.6.0 minimum/default; use the latest stable version required by the brief. The wrapper JAR and distribution SHA-256 match official metadata and the distribution hash is committed. No global Gradle installation is needed.
+
+All explicitly versioned catalog libraries were checked against official Google Maven or Maven Central POMs; BOM-managed Compose aliases were checked in stable BOM 2026.09.00. Material 3 remains the sole prerelease exception, 1.5.0-beta02. See `gradle/libs.versions.toml` for pins. The actual build/quality outcome, including compatibility limits, is recorded in PROGRESS rather than assumed from metadata.
+
+Disable Gradle's Android SDK auto-download with `android.builder.sdkDownload=false` to preserve the owner's approval requirement for SDK changes. Maven/Gradle project dependency downloads are part of the approved build work.
+
+Sources: [Gradle current-release metadata](https://services.gradle.org/versions/current), [Google Maven](https://dl.google.com/dl/android/maven2/master-index.xml), [Maven Central](https://repo.maven.apache.org/maven2/), [SDK auto-download control](https://developer.android.com/studio/intro/update).
+
+## D023 — Share real quality tasks across module types
+
+**Accepted.** Root aggregate tasks cover application/library debug assembly, host tests and lint, plus formatting/static analysis for every module and build logic. Android test-only modules have assembly tasks but no `lintDebug` in AGP 9.5; do not depend on a nonexistent task. They still receive formatting/detekt and their actual test code is reviewed in the relevant phase.
+
+Use latest stable detekt 1.23.8 as required, with type resolution disabled because its embedded Kotlin compiler is 2.0.21. Kotlin compilation and Android Lint remain enabled. Do not replace it with the available detekt 2 alpha or claim type-aware detekt coverage. Explicitly configure ktlint 1.8's Compose annotation naming exemption in the formatter bridge; retain the other naming checks.
+
+Sources: [detekt compatibility](https://detekt.dev/docs/introduction/compatibility/), [pinned ktlint naming rule](https://raw.githubusercontent.com/pinterest/ktlint/1.8.0/ktlint-ruleset-standard/src/main/kotlin/com/pinterest/ktlint/ruleset/standard/rules/FunctionNamingRule.kt).
+
+## D024 — Generate coherent fallback and launch surfaces
+
+**Accepted.** Official Material Color Utilities 0.4.0, Tonal Spot, seed `0xFF63597F`, 2025 specification/phone platform/standard contrast generate both 48-role palettes. The dark surface, primary and primaryContainer exactly match the brief's samples. Small generated differences in other roles are preserved. The utility is not an app runtime dependency; provenance and symbol attribution are in the design-system README and NOTICE.
+
+Match the default dynamic launch surface: on API 31–33, derive neutral-variant tone 98/light and 6/dark using color-list `lStar` from `system_neutral2_600`; on API 34+, use `system_surface_light/dark`. These mappings were verified against the pinned Material 3 source/AAR. Below 31 use the generated fallback. API 31 host tests observed a one-unit RGB-channel difference between framework and Compose CAM quantization, so tests permit at most one unit per RGB channel there and require exact equality on API 34+. Real cold-launch continuity remains a device smoke test. The future Dynamic color off preference must also select a coherent launch policy when implemented.
+
+Sources: [Material Color Utilities](https://github.com/material-foundation/material-color-utilities), [color-list resources](https://developer.android.com/guide/topics/resources/color-list-resource), [Android 12 color modulation](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android12-release/core/java/android/content/res/ColorStateList.java).
+
+## D025 — Run host tests within the approved JDK
+
+**Accepted.** Robolectric 4.17 can model API 37, but APIs 36–37 require Java 21. Keep the approved JDK 17 and run navigation on APIs 26/35 and dynamic launch checks on 31/35. Do not install another JDK or substitute host simulation for API 26/37 emulator smoke testing. These tests cover UI behavior, composition saved state and palette contracts, not a real process death or physical display behavior.
+
+Sources: [Robolectric compatibility](https://robolectric.org/compatibility_table/), [Navigation 3 saved state](https://developer.android.com/guide/navigation/navigation-3/save-state).
+
+## D026 — Use compatible icon and system-bar defaults
+
+**Accepted.** Keep one adaptive icon in `mipmap-anydpi`, since every supported device is API 26+. Include its monochrome layer in that resource: Android 8's verified parser skips unrecognized children, while Android 13+ consumes it. This avoids duplicating the icon solely for the monochrome child. Remove unused XML-only palette exports and the duplicate moon drawable; all Compose color roles remain intact.
+
+Let Activity's `enableEdgeToEdge()` select supported navigation-bar contrast flags rather than referencing the API 27 navigation-bar attribute in an API 26 base style. Target 37 receives predictive-back behavior by default; Navigation 3 handles the back stack without a redundant newer manifest attribute. Gesture animation and actual API 26 icon rendering remain device checks.
+
+Sources: [Android 8 adaptive-icon parser](https://raw.githubusercontent.com/aosp-mirror/platform_frameworks_base/android-8.0.0_r1/graphics/java/android/graphics/drawable/AdaptiveIconDrawable.java), [predictive-back defaults](https://developer.android.com/develop/ui/compose/animation/shared-elements/navigation).
+
+## D027 — Give saveable navigation keys JVM-visible serializers
+
+**Verified correction.** Navigation 3's Android default NavKey serializer discovers object serializers reflectively. File-private destination objects caused `IllegalAccessException` during initial composition in the real host tests. Keep the two keys Kotlin `internal`, which produces JVM-visible object classes while keeping the Kotlin API scoped to the app module. Preserve `@Serializable` and `rememberNavBackStack`; do not discard saved-state behavior to avoid the failure. The navigation tests exercise both transitions and saved-state restoration.
+
+## D028 — Make app-bar action bounds explicitly accessible
+
+**Accepted.** The pinned Expressive icon button reported a 40 dp semantic layout width in host tests. Its platform touch expansion may be larger, but the brief requires reliable 48 dp targets and accessible traversal. Give both app-bar icon buttons explicit 48 dp layout bounds, retaining the supplied M3 component and 24 dp symbol. Test these bounds in normal and 200% font/RTL navigation rather than relying on invisible expansion.

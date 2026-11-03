@@ -4,65 +4,78 @@ Last updated: 2026-11-03 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 0 — planning checkpoint complete; Foundation implementation not started.**
+**Phase 0 Foundation is implemented and host checks pass. API 26/37 emulator smoke checks are deferred under the owner's permission to skip device testing until a device is available.** Full runtime exit evidence remains pending; host tests are not emulator results.
 
-The owner requested environment verification, approval before installations, then PLAN and DECISIONS for review before code. The owner approved API 37 installation and confirmed that user Stop cancels the timer while playback continues. Stop at this checkpoint; do not advance to Phase 1.
+Stop before Phase 1 in this task. No timer engine, playback pipeline, timer controls or settings behavior is implemented. The initial environment/planning checkpoint is commit `95d885e`; Foundation implementation is `9f62c60`. The owner approved Foundation and confirmed that user Stop cancels the timer while playback continues.
 
-## Completed in this task
+## Implemented
 
-- Read the full AGENTS.md and visually inspected all four design PNGs.
-- Checked SDK environment variables, the standard macOS SDK location, Java discovery, Homebrew JDK, standard Android Studio locations and Spotlight.
-- Found the existing SDK and working Homebrew OpenJDK 17.0.20.1. No replacement JDK or Android Studio was needed.
-- Queried the existing Android CLI catalog. The old `platforms/android-37` name failed; corrected it to the catalog's `platforms/android-37.0`.
-- Installed only the approved Android 17 / API 37.0 platform, revision 2, into the existing SDK.
-- Added ignored local.properties pointing to the SDK. No shell profile or global Java setting changed.
-- Wrote [PLAN.md](PLAN.md) and [DECISIONS.md](DECISIONS.md), including official-source checks and corrections to alarm revocation, quota assumptions, WIU provenance and volume safety.
-- Recorded the owner-confirmed Stop behavior in DECISIONS D018.
+- Checksum-verified Gradle 9.8.2 wrapper, Kotlin DSL, pinned catalog, configuration/build caches and convention plugins in build-logic.
+- All 15 requested module boundaries. Timer/data/playback/system/surfaces/testplayer/benchmark modules contain build boundaries until their actual phases. The app does not depend on testplayer; its release variant is disabled.
+- Root assembly, unit-test, lint, Spotless/ktlint and detekt aggregates, plus `verifyFoundation` and `formatAll`, including build-logic quality and plugin validation.
+- AGP 9.5.0, built-in Kotlin 2.4.21, KSP 2.3.13 and Hilt 2.60.1 compile together. Stable Navigation 3 1.2.0; Material 3 1.5.0-beta02 over stable BOM 2026.09.00.
+- Dynamic light/dark theme, generated 48-role Tonal Spot fallback palettes, Expressive motion and system typography. Dark surface/primary/primaryContainer exactly match the design samples; generation provenance is documented.
+- Single Activity, edge-to-edge Home/Settings navigation, saveable destination keys, system Back, flexible Settings app bar and explicit 48 dp actions.
+- Compatible system splash with dynamic launch surfaces, adaptive/themed moon icon, Rounded symbols and their license/attribution.
+- Debug StrictMode/LeakCanary, release minification/resource shrinking, settings-only backup allowlist and explicit test-tool backup exclusions.
+- Ignored local.properties retains the verified SDK. SDK auto-download is disabled; no additional SDK/JDK/emulator/CLI installation occurred during Foundation.
 
-## Environment and checks actually executed
+## Verification actually completed
 
-| Check | Observed result |
+Commands used existing JDK 17.0.20.1 through command-local JAVA_HOME.
+
+| Command/check | Observed result |
 |---|---|
-| `java -version` via macOS default shim | No registered Java runtime |
-| `/usr/libexec/java_home -V` | No registered Java runtime |
-| Direct Homebrew `java -version` / `javac -version` | Pass; OpenJDK 17.0.20.1, arm64 |
-| Existing SDK package metadata | APIs 34/35/36 initially; Build Tools 34.0.0/35.0.0/36.0.0; Platform Tools 37.0.1; Command-line Tools 23.0 |
-| Android CLI package catalog | Confirmed actual platform package name and available stable packages |
-| `android --sdk=… sdk install platforms/android-37.0` | Completed, process exit 0 |
-| Installed SDK source.properties/build.prop | API 37.0 revision 2; Android 17; `REL`; preview SDK 0 |
-| JDK `jar --list` on installed android.jar | Pass; expected framework classes present |
-| Build Tools 36.0.0 `aapt2 version` | Pass; executable runs |
-| SDK Platform Tools `adb version` | Pass; 37.0.1 |
+| `./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt --continue --console=plain --quiet` | **PASS**, exit 0 |
+| `./gradlew verifyFoundation --console=plain` | **PASS**, BUILD SUCCESSFUL; 810 tasks, 14 executed / 796 up-to-date; includes build-logic check/validatePlugins |
+| `./gradlew formatAll --console=plain --quiet` | **PASS**, exit 0 |
+| FoundationNavigationTest | **8 passed**, API 26/35: toolbar/system Back, composition saved-state restore, 320 dp + 200% font + RTL and 48 dp bounds |
+| LaunchThemeTest | **4 passed**, API 31/35, light/dark; API 31 permits at most one RGB quantization unit, API 35 requires equality |
+| FallbackColorContrastTest | **2 passed**, 9 used text-role pairs per light/dark theme meet 4.5:1 |
+| `aapt2 dump permissions` on debug APK | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS |
+| Wrapper distribution/JAR | SHA-256 matched official Gradle metadata; distribution checksum committed |
+| Configuration cache | Stored, then reused by an unchanged verifyFoundation run; BUILD SUCCESSFUL |
+| `git diff --check`; ignored SDK configuration | Pass; local.properties ignored/untracked |
 
-The initial sandboxed Android CLI version check could not open its external bundle lock. The approved SDK operations later ran with the required filesystem access. No CLI update was performed despite an available-update notice.
+The **14 tests** are executed tests; other modules report NO-SOURCE, which is not feature coverage. APK: `app/build/outputs/apk/debug/app-debug.apk`, package `com.sujal.sleeptimer.debug`, 14,084,030 bytes. Debug tooling contributes to this size; release download size is unmeasured.
 
-No Gradle wrapper or application exists yet. `assembleDebug`, unit tests, lint, Spotless, detekt, screenshot tests, instrumentation and benchmarks have **not run**. No emulator or phone was used.
+Failures were fixed without a lint baseline: NavKey JVM visibility, app-bar bounds, API compatibility, obsolete/unused resources and complete backup rules. An uncached pass rebuilt stale icon-resource snapshots after a directory move; subsequent standard checks passed.
 
-Documentation/configuration checks passed: all local Markdown targets exist, files have final newlines and no trailing whitespace, the SDK property points to the verified installation, and `git check-ignore -v local.properties` confirms the file is ignored and untracked. An independent read-only review found no actionable planning/safety issues.
+## Environment
 
-## Next task after plan review
+SDK: `/Users/sujalsunilchaudhary/Library/Android/sdk`. Platforms 34/35/36/37.0, Build Tools 34.0.0/35.0.0/36.0.0, Platform Tools 37.0.1, Command-line Tools 23.0. API 37.0 revision 2 is Android 17 REL.
 
-Continue **the rest of Phase 0 Foundation**:
+JDK: `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, 17.0.20.1 arm64. The default macOS Java shim remains unconfigured; no shell profile changed. Android Studio/emulator/system images were not found or installed. The Android 15 phone is disconnected. No device installation or instrumentation ran.
 
-1. Recheck current official dependency releases, resolve the AGP/built-in-Kotlin/KSP/compiler-plugin combination, then create pinned catalog and Gradle wrapper.
-2. Create build-logic and the requested module structure, quality conventions and aggregate checks.
-3. Implement only Foundation theme, symbols, splash, edge-to-edge and Home/Settings navigation. No fake timer behavior.
-4. Run actual host build/unit/lint/format/detekt checks and report observed results.
-5. Run API 26/37 Foundation smoke tests if an approved emulator/device is available. Otherwise mark them pending; do not wait for the owner's phone or claim full phase exit.
+## Known limitations and pending checks
 
-Do not install an emulator, system image, newer CLI, additional SDK package or JDK without approval. Implementation dependency downloads will be identified when the Foundation task starts.
+- API 26/37 emulator launches and Android 15 phone smoke checks are **not run**. Actual splash/bar continuity, predictive gesture animation, rotation and Hilt/StrictMode/LeakCanary startup need runtime inspection.
+- Only Foundation app bars/navigation are present. Full idle/running/Settings screenshot parity is not claimed: dial, presets, actions, cards and setting rows arrive in their phases. No screenshot baselines were fabricated.
+- Robolectric API 36–37 requires JDK 21; the approved JDK 17 supports the host coverage used here. No replacement JDK was installed.
+- Stable detekt runs without type resolution because its compiler is older than Kotlin 2.4; Kotlin compilation and Android Lint remain enabled. Gradle reports deprecations for future Gradle 10; pinned 9.8.2 checks pass.
+- The latest AGP/Kotlin combination is beyond the compiler's published fully tested AGP range. Foundation compile/KSP/Hilt/tests pass; future feature dependencies still require their own checks.
+- Future Dynamic color off must select a coherent launch policy rather than blindly reusing the default dynamic launch resource.
+- Playback timing, exact alarms, WIU, route safety, DND, shake, overnight/OEM survival, release size/performance/battery budgets and R8 runtime behavior are unverified.
+- Production application ID, publisher and signing remain release inputs. No unanswered product choice blocks Phase 1.
 
-## Known limitations and verification gates
+## Phone smoke steps when connected
 
-- No implementation or APK exists; visual parity, timing, playback, volume, permissions and accessibility are untested.
-- No emulator/system images or Android Studio found; the owner's Android 15 phone is disconnected. Runtime checks are pending.
-- AGP 9.5.0 plus latest Kotlin is outside the latter's published fully tested AGP range; Foundation must demonstrate compatibility before features.
-- Exact-alarm revocation can stop the app. The end+30 s backup can be quota-delayed. The plan does not claim to defeat force-stop or guarantee an unavailable recovery path.
-- Public playback/routing observations may be insufficient for safe fading or definitive remote-stop verification. Implement explicit uncertainty and conservative behavior.
-- WIU entry paths, DND/Bedtime warning behavior, shake traces, OEM overnight survival and performance/battery budgets require future runtime evidence.
-- Generated fallback palettes and visual comparison against the references have not been implemented or verified.
-- Production application ID, publisher and signing identity remain release inputs. No unanswered product question blocks Foundation planning.
+1. Enable USB debugging, connect the Android 15 phone and accept USB authorization.
+2. From the repository root:
 
-## Testing at this checkpoint
+   ```sh
+   export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+   export PATH="$JAVA_HOME/bin:$PATH"
+   ./gradlew :app:installDebug
+   ```
 
-No phone steps are necessary: there is no app to install yet. Review PLAN and DECISIONS. After Foundation implementation, test installation/launch, Home–Settings navigation, theme/splash continuity, edge-to-edge insets, rotation/resizing and large fonts on an emulator or the connected Android 15 phone. Exact commands/package name will accompany the real build rather than a guessed APK path.
+3. Open **Sleep timer**. Expect the Home app bar/tune action with an empty body at this phase. Tap **Open settings**, then return using the arrow and system Back.
+4. Rotate on both destinations; Settings should survive rotation. Repeat at 200% font, RTL and TalkBack where available; actions must remain reachable.
+5. Repeat with system light/dark themes and different wallpaper colors. Cold-launch in dark mode to inspect splash/bar flashes. Check gesture and three-button navigation insets where available.
+6. There is no playback timer yet. These screens should initiate no audio, permission prompt, foreground service, wake lock or screen locking.
+
+Repeat on API 26/37 once approved emulators exist. No device is needed for host development.
+
+## Next phase
+
+After the owner's next continuation: **Phase 1 Reliability core** from PLAN. Implement model/commands/effects, versioned DataStores, service/alarm/wake-lock ownership, basic notification, real stop pipeline, safe fade/restore, debug testplayer and deterministic/Robolectric coverage. Preserve Stop-as-cancel. Resolve timing quota, WIU and playback-observation gates before claiming reliable device stopping. Stop at the phase boundary and report evidence/skips honestly.
