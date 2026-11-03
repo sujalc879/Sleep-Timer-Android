@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Official Material Symbols Rounded bedtime path, Apache-2.0; see core/designsystem/README.md. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <!-- The 960-unit symbol viewport occupies the central 66 dp adaptive-icon safe area. -->
+    <group
+        android:scaleX="0.6111111"
+        android:scaleY="0.6111111"
+        android:translateX="186.6667"
+        android:translateY="186.6667">
+        <path
+            android:fillColor="@color/sleeptimer_on_primary_container"
+            android:pathData="M524,920Q440,920 366.5,888Q293,856 238.5,801.5Q184,747 152,673.5Q120,600 120,516Q120,388 192,284Q264,180 385,138Q407,130 426,143.5Q445,157 444,180Q441,265 471,342Q501,419 561,479Q621,539 698,569Q775,599 860,596Q886,595 898.5,613.5Q911,632 903,655Q859,775 755.5,847.5Q652,920 524,920Z" />
+    </group>
+</vector>

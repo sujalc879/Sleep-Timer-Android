@@ -1,0 +1,17 @@
+plugins {
+    id("sleep.android.compose.library")
+}
+
+android {
+    namespace = "com.sujal.sleeptimer.core.designsystem"
+}
+
+dependencies {
+    api(platform(libs.androidx.compose.bom))
+    api(libs.androidx.compose.material3)
+    api(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+}

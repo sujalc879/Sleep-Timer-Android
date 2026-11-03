@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.SleepTimer" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/sleeptimer_launch_surface</item>
+        <item name="android:colorAccent">@color/sleeptimer_primary</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

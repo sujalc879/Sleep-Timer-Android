@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from the same Tonal Spot scheme as FallbackColorSchemes.kt. -->
+<resources>
+    <color name="sleeptimer_surface">#FDF8FE</color>
+    <color name="sleeptimer_primary">#645789</color>
+    <color name="sleeptimer_primary_container">#D1C1FA</color>
+    <color name="sleeptimer_on_primary_container">#473A6A</color>
+</resources>

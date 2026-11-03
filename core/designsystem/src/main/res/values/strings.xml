@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sleeptimer_title">Sleep timer</string>
+    <string name="sleeptimer_settings_title">Settings</string>
+    <string name="sleeptimer_open_settings">Open settings</string>
+    <string name="sleeptimer_back">Back</string>
+</resources>

@@ -1,0 +1,3 @@
+<resources>
+    <color name="sleeptimer_launch_surface">@android:color/system_surface_dark</color>
+</resources>

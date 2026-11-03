@@ -1,0 +1,13 @@
+<resources>
+    <style name="Theme.SleepTimer" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/sleeptimer_launch_surface</item>
+        <item name="android:colorAccent">@color/sleeptimer_primary</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <style name="Theme.SleepTimer.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/sleeptimer_launch_surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.SleepTimer</item>
+    </style>
+</resources>

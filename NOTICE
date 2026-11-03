@@ -1,0 +1,7 @@
+Material Symbols Rounded assets are from Google's Material Design Icons project,
+licensed under Apache License 2.0. See licenses/material-symbols-Apache-2.0.txt.
+
+Imported symbols: tune, arrow_back, and bedtime (filled). View-theme tint was
+adapted to semantic app colors; the launcher foreground preserves the bedtime
+path and scales it into the adaptive icon safe area. Source links and palette
+generation provenance are recorded in core/designsystem/README.md.
