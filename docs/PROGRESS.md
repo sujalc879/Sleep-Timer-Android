@@ -35,6 +35,7 @@ Commands used existing JDK 17.0.20.1 through command-local JAVA_HOME.
 | `aapt2 dump permissions` on debug APK | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS |
 | Wrapper distribution/JAR | SHA-256 matched official Gradle metadata; distribution checksum committed |
 | Configuration cache | Stored, then reused by an unchanged verifyFoundation run; BUILD SUCCESSFUL |
+| Follow-up `./gradlew :app:installDebug --console=plain` | **PASS**, installed on one Moto g54 5G running Android 15 / API 35; BUILD SUCCESSFUL |
 | `git diff --check`; ignored SDK configuration | Pass; local.properties ignored/untracked |
 
 The **14 tests** are executed tests; other modules report NO-SOURCE, which is not feature coverage. APK: `app/build/outputs/apk/debug/app-debug.apk`, package `com.sujal.sleeptimer.debug`, 14,084,030 bytes. Debug tooling contributes to this size; release download size is unmeasured.
@@ -45,7 +46,9 @@ Failures were fixed without a lint baseline: NavKey JVM visibility, app-bar boun
 
 SDK: `/Users/sujalsunilchaudhary/Library/Android/sdk`. Platforms 34/35/36/37.0, Build Tools 34.0.0/35.0.0/36.0.0, Platform Tools 37.0.1, Command-line Tools 23.0. API 37.0 revision 2 is Android 17 REL.
 
-JDK: `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, 17.0.20.1 arm64. The default macOS Java shim remains unconfigured; no shell profile changed. Android Studio/emulator/system images were not found or installed. The Android 15 phone is disconnected. No device installation or instrumentation ran.
+JDK: `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, 17.0.20.1 arm64. The default macOS Java shim remains unconfigured; no shell profile changed. Android Studio/emulator/system images were not found or installed. The Moto g54 5G subsequently connected and authorized ADB; the debug app is installed on Android 15 / API 35. No device UI smoke checks or instrumentation have run yet.
+
+The owner's first install attempt reported no connected devices. A follow-up ADB check detected the authorized phone, and rerunning the same installation succeeded. No application/build source change was required.
 
 ## Known limitations and pending checks
 
