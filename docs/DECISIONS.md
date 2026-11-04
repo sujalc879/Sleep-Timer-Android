@@ -227,3 +227,20 @@ Sources: [ApplicationStartInfo.wasForceStopped](https://developer.android.com/re
 Nightly's Home sheet requires a functional alarm-backed schedule, so its narrow scheduling dependency lands with this phase rather than exposing an inert switch. Complete Settings and OEM guidance remain Phase 3. Shake presentation checks actual monitoring capability; a stored default-on preference alone must not promise working detection. Screen-lock steps likewise require a working capability.
 
 The pinned Material 3 1.5.0-beta02 source supplies connected toggle shapes, expressive Button shapes, Text auto-sizing, wavy progress and TimePicker. Keep experimental Expressive opt-ins in the design system. Use shared bounds and the theme's expressive spatial/effect specs for dial motion. At narrow widths/large fonts, allow scrolling and wrap controls. Countdown text uses system-font tabular figures and fitting only inside the dial; ordinary copy follows font scale.
+
+
+## D034 — Use the verified current Compose equivalents
+
+**Verified against the pinned source.** Compose animation 1.12.1 calls the shared-bounds resize factory `SharedTransitionScope.ResizeMode.scaleToBounds()`. Adaptive 1.3.0 replaces `currentWindowAdaptiveInfo()` with `currentWindowAdaptiveInfoV2()`. Material 3 1.5.0-beta02 replaces the old modal-sheet state helper with `rememberBottomSheetState(Hidden, enabledValues = {Hidden, Expanded})` and provides ListItem's trailing content/click overloads. Use those APIs and keep the required Expressive opt-in contained in the design system.
+
+For the 286 dp running indicator, use the supplied CircularWavyProgressIndicator with an 80 dp preferred wavelength and gentle 10 dp/s wave travel. The pinned implementation returns a flat initial path for fractional amplitude before a Morph exists. Begin at full amplitude and let the final-three-percent change create its supported flattening animation; do not substitute a hand-drawn wave. Clockwise progress and elapsed track remain the library's behavior. Disabled animations flatten the wave.
+
+Sources: [pinned Material sources](https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3-android/1.5.0-beta02/material3-android-1.5.0-beta02-sources.jar), [pinned animation sources](https://dl.google.com/dl/android/maven2/androidx/compose/animation/animation-android/1.12.1/animation-android-1.12.1-sources.jar), [pinned adaptive sources](https://dl.google.com/dl/android/maven2/androidx/compose/material3/adaptive/adaptive/1.3.0/adaptive-1.3.0-sources.jar).
+
+## D035 — Schedule one Nightly occurrence and retain completed test evidence
+
+**Accepted.** Nightly computes the next selected local date using java.time and the current zone. A DST gap moves forward by its gap; an overlap uses the earlier offset once. Store a separate last-nightly command identity so cancelling an occurrence cannot allow it to restart after the bounded general command history rotates. Validate alarm configuration/occurrence, reject early or over-five-minute-late deliveries, and reschedule after delivery, relevant broadcasts and schedule changes. Starting Nightly while another timer is active only records the skipped occurrence; it does not restart that service or interrupt its fade.
+
+Nightly requires exact-alarm access; its sheet explains that access before enabling the schedule. It starts without WIU and retains the conservative Android 17 audio limits. Device delivery remains unverified. Snapshot schema 1 gains optional fields for the nightly identity and last completed test result. Recover the previous test-result format when present, keep test evidence across normal runs/cancelled tests, and retain the settings-only backup policy.
+
+Sources: [LocalDateTime zone resolution](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/LocalDateTime.html#atZone(java.time.ZoneId)), [Compose semantics](https://developer.android.com/develop/ui/compose/accessibility/semantics), [shared bounds](https://developer.android.com/develop/ui/compose/animation/shared-elements).

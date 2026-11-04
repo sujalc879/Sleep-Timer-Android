@@ -4,9 +4,39 @@ Last updated: 2026-11-04 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 1 Reliability core is implemented and all host checks pass. Its required physical-device exit test is pending. Stop before Phase 2 Home UI.** The owner authorized Phase 1 after Foundation and confirmed that user Stop cancels the timer while playback continues.
+**Phase 2 Home UI is implemented and host verification passes. Stop before Phase 3 Settings and features.** The owner authorized this phase after the Reliability core. Stop still cancels the timer and leaves playback running.
 
-The phone was disconnected at the latest ADB check. No Phase 1 installation, Spotify stop, forced-Doze run, physical fade/restore or Android 17 hardening test is claimed. The owner's permission to defer unavailable device testing remains in effect. See [PHASE1_TESTING.md](PHASE1_TESTING.md) for exact install and timer commands.
+The Moto g54 5G connected during this task. The final verified Phase 2 debug APK installed successfully after confirming the timer was idle and opened with `Status: ok` (WARM, 1511 ms, not a benchmark). Idle Home/dynamic colors were visually inspected during this task. This is not a Spotify/Doze or physical TalkBack pass. The Phase 1 physical-device exit gate remains pending.
+
+See [PHASE2_TESTING.md](PHASE2_TESTING.md) for the current Home test steps and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/recovery timing procedures.
+
+## Implemented in Phase 2
+
+- Design-based idle/running/finished Home, connected Expressive presets, bounded circular duration slider, M3 circular wavy progress, dynamic color roles and shared-bounds motion.
+- Keyboard arrows/Home/End, semantic TalkBack range/custom actions, whole-minute haptics, tabular fitting countdowns, narrow/large-font scrolling, RTL and expanded two-column layout.
+- Lifecycle-aware Home ViewModel connected to durable engine selection/start/cancel/adjust commands; elapsed-time display updates, current end-time formatting and honest completion states.
+- Validated Custom duration sheet, 90 min/2 h/3 h choices and real starts up to 12 hours.
+- Functional Nightly time/repeat-day/duration sheet and supporting exact-alarm scheduler, with zone-aware recurrence, stale-delivery validation and occurrence deduplication across cancellation/history rotation. It does not replace an active timer or assume WIU.
+- Basic readiness sheet with real system-access states and links; real 10-second test entry/result dialogs; notification requests occur after starting the FGS. Full reliability/permission explanations and Settings rows remain Phase 3.
+- Separate durable completed-test evidence so ordinary runs and cancelled tests do not erase readiness's last test. Optional schema-1 fields preserve older snapshots.
+- Actual capability gates hide the shake card and screen-lock pipeline step until their runtime features exist. No inert enable switch or fake active sensor is exposed.
+- Three visually reviewed native screenshot baselines and new interaction, formatting, drag, DST, persistence and occurrence regressions.
+
+## Current verification
+
+| Check | Observed result |
+|---|---|
+| `./gradlew formatAll --console=plain` | **PASS** |
+| `./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt :feature:home:verifyRoborazziDebug --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 11 s; 889 tasks, 51 executed / 838 up-to-date |
+| Test XML totals, including pure-model JVM tests | **150 passed**, zero failures/errors/skips |
+| Home interaction tests | **5 passed**: presets/range/keyboard, thumb/start/stop/reduction, 320 dp + 200% font + RTL, Custom bounds, expanded layout |
+| Screenshot verification | **3 passed**: idle dark/light and configured running dark, 390 dp, native graphics |
+| Additional new tests | Dial drag 3; DST/recurrence 4; formatting/input 3; engine selection/Nightly history/last-test regressions 3 |
+| Phone install/open | **PASS** for a Phase 2 APK on Moto g54 5G / API 35; idle Home visually inspected |
+
+The screenshots are regression baselines rendered from the implementation, not pixel-identical copies of the mockups. The configured running screenshot includes future capabilities solely as explicit test inputs; production presentation remains honest. No baseline or global analyzer threshold relaxation was introduced. Narrow commented exceptions retain saveable sheet/coordinator ownership without spreading ViewModels through render components.
+
+The owner's intermediate commit `033b6d1` was preserved. Follow-up runtime safeguards are `7afa087`; Home fixes/tests are `375fcff`; phase notes are a separate commit.
 
 ## Implemented in Phase 1
 
@@ -22,7 +52,7 @@ The phone was disconnected at the latest ADB check. No Phase 1 installation, Spo
 - Separate debug-only test-player APK: real bundled local MediaPlayer/MediaSession, cooperative/focus-ignoring/auto-resume modes, silent output by default and deterministic resource cleanup. The production app does not depend on it.
 - Deterministic and Robolectric coverage for state/recovery/scheduling, real DataStore corruption/reopen behavior, alarm identities, lock ownership, playback safety, command decoding and notifications.
 
-## Verification actually completed
+## Phase 1 verification previously completed
 
 Commands used the existing JDK 17.0.20.1 through command-local JAVA_HOME.
 
@@ -41,14 +71,14 @@ Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.d
 
 ## Important limits and pending gates
 
-- **Phase 1 device definition of done is not met yet:** the two-minute Spotify screen-off/forced-Doze stop within one second, actual fading and safe physical restore remain unmeasured. The app is not production-ready.
+- **Phase 1 device definition of done remains unmet:** the two-minute Spotify screen-off/forced-Doze stop within one second, actual fading and safe physical restore remain unmeasured. The app is not production-ready.
 - Native fade/restore currently require API 33+, one connected output matching the media-route prediction, observable media sessions and safe interruption state. Ambiguous routes and all API 26–32 skip volume changes. Ordinary phone/Bluetooth routes may therefore stop without fading. See [playback safety](../core/playback/README.md); do not claim universal fade support.
 - Foreground startup denial, exact-alarm revocation, sticky restart, real process death, reboot/update, force-stop, low memory, restricted bucket, OEM survival, long runs and actual wake-lock/battery behavior need runtime tests. Host tests cover the reducer and adapters only. `am kill` can leave an FGS process alive and is not automatically process-death evidence.
 - Android 15 force-stop inspection uses the current PID's startup history. Older versions lack that unambiguous flag; detection is incomplete there. Interrupted results are persisted; their complete in-app explanation belongs to the later UI/reliability flows.
 - A call/alarm deferral can hold a bounded two-hour wake lease with polling. Battery cost and callback refinement need hardening measurements. DND/Bedtime vibration behavior remains unverified on a device.
-- Full Home UI arrives in Phase 2. Settings, contextual permission prompts/readiness, visible test-result flow, shake, nightly scheduling, screen locking and dimming arrive in Phase 3. The only current timer start controls are debug Activity commands; defaults for later features are persisted but those features are not exposed as working controls.
+- Home controls, Custom/Nightly, basic readiness and visible test results now work. Complete Settings, shake monitoring, screen locking, dimming, OEM guidance and fuller permission flows remain Phase 3. The Settings destination still contains only its app bar. Nightly background delivery and physical accessibility remain unverified.
 - Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
-- Phase 0 API 26/37 emulator smoke checks remain deferred. An earlier Foundation APK installed and cold-launched on a Moto g54 5G / Android 15; that is not evidence for the current timer implementation.
+- Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation and a Phase 2 APK opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
 - Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
 
 ## Environment and repository
@@ -78,7 +108,7 @@ adb devices -l
 adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity
 ```
 
-Start music, then run the actual ten-second timer:
+The Home now provides Start and the 10 s test chip. The debug command remains available for repeatable tests:
 
 ```sh
 adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity -a com.sujal.sleeptimer.debug.TEST
@@ -88,4 +118,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-When the phone is connected, collect Phase 1 runtime evidence and resolve any failures. If device testing stays deferred, the next implementation phase is **Phase 2 Home UI**, requiring the owner's next continuation. Do not silently claim the pending runtime gates passed.
+Use the connected phone to collect Phase 1 runtime evidence and resolve any failures. The next implementation phase is **Phase 3 Settings and features**, requiring the owner's next continuation. Do not silently claim the pending runtime gates passed.

@@ -163,7 +163,7 @@ Physical shake traces, overnight timing, OEM survival, hearing-safety/Bluetooth 
 
 The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Reliability core. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
 
-Phase 1 host implementation and checks are complete; the physical-device exit evidence remains pending. Stop before Phase 2. PROGRESS and PHASE1_TESTING identify the remaining evidence and exact phone commands.
+Phase 2 Home implementation and host checks are complete. Stop before Phase 3. PROGRESS, PHASE1_TESTING and PHASE2_TESTING retain the pending runtime evidence and exact phone commands.
 
 
 ## Phase 2 execution
