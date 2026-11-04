@@ -4,7 +4,7 @@ Planning date: 2026-11-03 (Asia/Kolkata).
 
 ## Scope and current gate
 
-The owner reviewed the initial planning checkpoint and authorized the remaining **Phase 0 Foundation implementation**. This scope stops before timer/playback features. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
+The owner authorized **Phase 1 Reliability core** after Foundation. This task stops before Home UI (Phase 2). Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
 
 The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../design) visually inspected. The PDF duplicates those references. The product priority is reliable playback stopping, followed by safe volume handling, platform-native presentation, accessibility, and low battery use. A disconnected phone does not block implementation; unavailable runtime tests are reported as skipped.
 
@@ -21,7 +21,7 @@ The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../de
 | JDK | Homebrew OpenJDK 17.0.20.1, aarch64; `java` and `javac` executed successfully |
 | JDK home | `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home` |
 | Android Studio / bundled JBR | Not found in standard application locations or Spotlight |
-| Emulator / system images | Not installed; no device testing performed |
+| Emulator / system images | Not installed; Phase 1 device tests pending; prior Foundation APK installed on Android 15 |
 | Shell configuration | `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `JAVA_HOME` were unset; no global configuration changed |
 
 The approved addition was `platforms/android-37.0`; SDK metadata reports Android 17, `REL`, preview SDK 0. The installed archive opens with JDK `jar`, and Build Tools 36.0.0 `aapt2 version` runs. These are environment checks, not an application build.
@@ -33,7 +33,7 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 export PATH="$JAVA_HOME/bin:$PATH"
 ```
 
-Use the committed Gradle wrapper once Foundation creates it. No system Gradle, Android Studio, emulator, or replacement JDK is required to begin host builds. Further SDK/tool installations require owner approval.
+Use the committed Gradle wrapper. No system Gradle, Android Studio, emulator, or replacement JDK is required to begin host builds. Further SDK/tool installations require owner approval.
 
 ## Architecture and module boundaries
 
@@ -130,13 +130,13 @@ Nightly presentation may land in Phase 2, but the full scheduling/settings behav
 
 ## Verification strategy
 
-Once Gradle exists, run after each meaningful implementation change:
+Run after each meaningful implementation change:
 
 ```sh
 ./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt
 ```
 
-Foundation will define and verify those aggregate tasks for all relevant modules, including quality checks for build logic. Add release, screenshot, instrumentation and benchmark tasks when their phase requires them. Repeat checks only after meaningful changes or failures. Never list a command as passed merely because it appears here.
+Foundation defines those aggregate tasks for all relevant modules, including quality checks for build logic. Add release, screenshot, instrumentation and benchmark tasks when their phase requires them. Repeat checks only after meaningful changes or failures. Never list a command as passed merely because it appears here.
 
 | Layer | Required coverage |
 |---|---|
@@ -161,6 +161,6 @@ Physical shake traces, overnight timing, OEM survival, hearing-safety/Bluetooth 
 
 ## Questions and review boundary
 
-The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Foundation planning. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
+The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Reliability core. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
 
-The owner authorized Foundation after reviewing this plan. Complete its available checks and report deferred runtime gates, then stop before Phase 1. PROGRESS identifies the next authorized phase and remaining evidence.
+Phase 1 host implementation and checks are complete; the physical-device exit evidence remains pending. Stop before Phase 2. PROGRESS and PHASE1_TESTING identify the remaining evidence and exact phone commands.

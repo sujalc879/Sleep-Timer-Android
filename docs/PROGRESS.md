@@ -1,84 +1,91 @@
 # Progress
 
-Last updated: 2026-11-03 (Asia/Kolkata).
+Last updated: 2026-11-04 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 0 Foundation is implemented and host checks pass. API 26/37 emulator smoke checks are deferred under the owner's permission to skip device testing until a device is available.** Full runtime exit evidence remains pending; host tests are not emulator results.
+**Phase 1 Reliability core is implemented and all host checks pass. Its required physical-device exit test is pending. Stop before Phase 2 Home UI.** The owner authorized Phase 1 after Foundation and confirmed that user Stop cancels the timer while playback continues.
 
-Stop before Phase 1 in this task. No timer engine, playback pipeline, timer controls or settings behavior is implemented. The initial environment/planning checkpoint is commit `95d885e`; Foundation implementation is `9f62c60`. The owner approved Foundation and confirmed that user Stop cancels the timer while playback continues.
+The phone was disconnected at the latest ADB check. No Phase 1 installation, Spotify stop, forced-Doze run, physical fade/restore or Android 17 hardening test is claimed. The owner's permission to defer unavailable device testing remains in effect. See [PHASE1_TESTING.md](PHASE1_TESTING.md) for exact install and timer commands.
 
-## Implemented
+## Implemented in Phase 1
 
-- Checksum-verified Gradle 9.8.2 wrapper, Kotlin DSL, pinned catalog, configuration/build caches and convention plugins in build-logic.
-- All 15 requested module boundaries. Timer/data/playback/system/surfaces/testplayer/benchmark modules contain build boundaries until their actual phases. The app does not depend on testplayer; its release variant is disabled.
-- Root assembly, unit-test, lint, Spotless/ktlint and detekt aggregates, plus `verifyFoundation` and `formatAll`, including build-logic quality and plugin validation.
-- AGP 9.5.0, built-in Kotlin 2.4.21, KSP 2.3.13 and Hilt 2.60.1 compile together. Stable Navigation 3 1.2.0; Material 3 1.5.0-beta02 over stable BOM 2026.09.00.
-- Dynamic light/dark theme, generated 48-role Tonal Spot fallback palettes, Expressive motion and system typography. Dark surface/primary/primaryContainer exactly match the design samples; generation provenance is documented.
-- Single Activity, edge-to-edge Home/Settings navigation, saveable destination keys, system Back, flexible Settings app bar and explicit 48 dp actions.
-- Compatible system splash with dynamic launch surfaces, adaptive/themed moon icon, Rounded symbols and their license/attribution.
-- Debug StrictMode/LeakCanary, release minification/resource shrinking, settings-only backup allowlist and explicit test-tool backup exclusions.
-- Ignored local.properties retains the verified SDK. SDK auto-download is disabled; no additional SDK/JDK/emulator/CLI installation occurred during Foundation.
+- Pure Kotlin versioned settings/run/snapshot/result models, validated commands, injectable clock and platform ports. Elapsed realtime is the only countdown clock.
+- One serial engine actor; initialization before publication, durable command deduplication, run/schedule/effect generations, cancellation of stale effects, bounded duration arithmetic and persisted warning/fade bookkeeping.
+- Real settings and timer DataStores with separate files, bounded JSON serializers, semantic/schema validation and corruption handlers. Schema 1 is the initial format; unsupported versions fail closed. Settings-only backup excludes timer snapshots.
+- Explicit immutable final-window and best-effort backup alarms, cancellation/reconciliation, timed idempotent wake leases, and a conservative full-run fallback when exact access is missing or a short run is at alarm-quota risk.
+- Hilt-composed `specialUse` foreground service, immediate foreground promotion, ephemeral capability tracking, validated gateway, alarm/system receivers and visible-Activity debug entry points. No snapshot is accepted as proof of Android 17 while-in-use capability.
+- Ordinary silent countdown notification, run-bound extend/cancel actions, separate-tap delivery IDs, permission-aware result posting and dismissal suppression until a meaningful state change. Promotion/Live Updates remain Phase 4.
+- Real local/remote playback observation, optional notification-listener media-session pause, eligible focus handling including delayed/failed results, PAUSE down/up fallback and one retry. Calls/alarms defer; a screen-off 30-second watchdog handles auto-resume.
+- Cancellable ease-out fade, persistence before volume writes, route/readback/user-change guards, settled-silence automatic restoration, two-minute restoration expiry and guarded gradual cancellation recovery. Native route eligibility is deliberately limited; see below.
+- Same-boot process recovery, reboot rejection, bounded late-stop policy, persisted cancellation recovery and Android 15 stopped-package startup inspection. Available exit reason codes remain local; no app names/media metadata are logged.
+- Separate debug-only test-player APK: real bundled local MediaPlayer/MediaSession, cooperative/focus-ignoring/auto-resume modes, silent output by default and deterministic resource cleanup. The production app does not depend on it.
+- Deterministic and Robolectric coverage for state/recovery/scheduling, real DataStore corruption/reopen behavior, alarm identities, lock ownership, playback safety, command decoding and notifications.
 
 ## Verification actually completed
 
-Commands used existing JDK 17.0.20.1 through command-local JAVA_HOME.
+Commands used the existing JDK 17.0.20.1 through command-local JAVA_HOME.
 
 | Command/check | Observed result |
 |---|---|
-| `./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt --continue --console=plain --quiet` | **PASS**, exit 0 |
-| `./gradlew verifyFoundation --console=plain` | **PASS**, BUILD SUCCESSFUL; 810 tasks, 14 executed / 796 up-to-date; includes build-logic check/validatePlugins |
-| `./gradlew formatAll --console=plain --quiet` | **PASS**, exit 0 |
-| FoundationNavigationTest | **8 passed**, API 26/35: toolbar/system Back, composition saved-state restore, 320 dp + 200% font + RTL and 48 dp bounds |
-| LaunchThemeTest | **4 passed**, API 31/35, light/dark; API 31 permits at most one RGB quantization unit, API 35 requires equality |
-| FallbackColorContrastTest | **2 passed**, 9 used text-role pairs per light/dark theme meet 4.5:1 |
-| `aapt2 dump permissions` on debug APK | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS |
-| Wrapper distribution/JAR | SHA-256 matched official Gradle metadata; distribution checksum committed |
-| Configuration cache | Stored, then reused by an unchanged verifyFoundation run; BUILD SUCCESSFUL |
-| Follow-up `./gradlew :app:installDebug --console=plain` | **PASS**, installed on one Moto g54 5G running Android 15 / API 35; BUILD SUCCESSFUL |
-| `git diff --check`; ignored SDK configuration | Pass; local.properties ignored/untracked |
+| `./gradlew formatAll --console=plain` | **PASS**, exit 0 |
+| `./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 13 s; 877 tasks, 79 executed / 798 up-to-date |
+| Host tests | **129 passed**, zero failures/skips in the test XML results |
+| `aapt2 dump permissions` on debug APK | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; MODIFY_AUDIO_SETTINGS is included for volume APIs |
+| `adb devices -l` | ADB started successfully; **no connected device** |
+| Configuration cache | Stored for the final verification command; prior checks reused it |
 
-The **14 tests** are executed tests; other modules report NO-SOURCE, which is not feature coverage. APK: `app/build/outputs/apk/debug/app-debug.apk`, package `com.sujal.sleeptimer.debug`, 14,084,030 bytes. Debug tooling contributes to this size; release download size is unmeasured.
+Test breakdown: engine **24**, service-intent decoding **8**, playback **37**, data **20**, system **23**, notification **3**, Foundation navigation/theme/contrast **14**. Robolectric covers APIs 26/35 (theme also 31); this is not API 37 runtime evidence. Build-only future modules report NO-SOURCE, not feature coverage. No lint baseline or global analyzer threshold relaxation was added.
 
-Failures were fixed without a lint baseline: NavKey JVM visibility, app-bar bounds, API compatibility, obsolete/unused resources and complete backup rules. An uncached pass rebuilt stale icon-resource snapshots after a directory move; subsequent standard checks passed.
+Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.debug`) and `tools/testplayer/build/outputs/apk/debug/testplayer-debug.apk` (`com.sujal.sleeptimer.testplayer`). The test-player release variant is disabled. LeakCanary is debug-only and contributes legacy storage permissions in the debug merged manifest; these are not production dependencies. No storage permission was granted during this task.
 
-## Environment
+## Important limits and pending gates
 
-SDK: `/Users/sujalsunilchaudhary/Library/Android/sdk`. Platforms 34/35/36/37.0, Build Tools 34.0.0/35.0.0/36.0.0, Platform Tools 37.0.1, Command-line Tools 23.0. API 37.0 revision 2 is Android 17 REL.
+- **Phase 1 device definition of done is not met yet:** the two-minute Spotify screen-off/forced-Doze stop within one second, actual fading and safe physical restore remain unmeasured. The app is not production-ready.
+- Native fade/restore currently require API 33+, one connected output matching the media-route prediction, observable media sessions and safe interruption state. Ambiguous routes and all API 26–32 skip volume changes. Ordinary phone/Bluetooth routes may therefore stop without fading. See [playback safety](../core/playback/README.md); do not claim universal fade support.
+- Foreground startup denial, exact-alarm revocation, sticky restart, real process death, reboot/update, force-stop, low memory, restricted bucket, OEM survival, long runs and actual wake-lock/battery behavior need runtime tests. Host tests cover the reducer and adapters only. `am kill` can leave an FGS process alive and is not automatically process-death evidence.
+- Android 15 force-stop inspection uses the current PID's startup history. Older versions lack that unambiguous flag; detection is incomplete there. Interrupted results are persisted; their complete in-app explanation belongs to the later UI/reliability flows.
+- A call/alarm deferral can hold a bounded two-hour wake lease with polling. Battery cost and callback refinement need hardening measurements. DND/Bedtime vibration behavior remains unverified on a device.
+- Full Home UI arrives in Phase 2. Settings, contextual permission prompts/readiness, visible test-result flow, shake, nightly scheduling, screen locking and dimming arrive in Phase 3. The only current timer start controls are debug Activity commands; defaults for later features are persisted but those features are not exposed as working controls.
+- Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
+- Phase 0 API 26/37 emulator smoke checks remain deferred. An earlier Foundation APK installed and cold-launched on a Moto g54 5G / Android 15; that is not evidence for the current timer implementation.
+- Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
 
-JDK: `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, 17.0.20.1 arm64. The default macOS Java shim remains unconfigured; no shell profile changed. Android Studio/emulator/system images were not found or installed. The Moto g54 5G subsequently connected and authorized ADB; the debug app is installed on Android 15 / API 35. No device UI smoke checks or instrumentation have run yet.
+## Environment and repository
 
-The owner's first install attempt reported no connected devices. A follow-up ADB check detected the authorized phone, and rerunning the same installation succeeded. No application/build source change was required.
+SDK: `/Users/sujalsunilchaudhary/Library/Android/sdk`; platforms 34/35/36/37.0, Build Tools 34.0.0/35.0.0/36.0.0, Platform Tools 37.0.1, Command-line Tools 23.0. JDK: `/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`, 17.0.20.1 arm64. No SDK/JDK/emulator/CLI installation or shell-profile change occurred in Phase 1. `local.properties` retains the SDK path and is ignored/untracked.
 
-## Known limitations and pending checks
+Foundation checkpoints: `95d885e` planning, `9f62c60` implementation, `a50403a` verification docs, `f153c49` Android 15 installation follow-up. Phase 1 source commits:
 
-- API 26/37 emulator launches and Android 15 phone smoke checks are **not run**. Actual splash/bar continuity, predictive gesture animation, rotation and Hilt/StrictMode/LeakCanary startup need runtime inspection.
-- Only Foundation app bars/navigation are present. Full idle/running/Settings screenshot parity is not claimed: dial, presets, actions, cards and setting rows arrive in their phases. No screenshot baselines were fabricated.
-- Robolectric API 36–37 requires JDK 21; the approved JDK 17 supports the host coverage used here. No replacement JDK was installed.
-- Stable detekt runs without type resolution because its compiler is older than Kotlin 2.4; Kotlin compilation and Android Lint remain enabled. Gradle reports deprecations for future Gradle 10; pinned 9.8.2 checks pass.
-- The latest AGP/Kotlin combination is beyond the compiler's published fully tested AGP range. Foundation compile/KSP/Hilt/tests pass; future feature dependencies still require their own checks.
-- Future Dynamic color off must select a coherent launch policy rather than blindly reusing the default dynamic launch resource.
-- Playback timing, exact alarms, WIU, route safety, DND, shake, overnight/OEM survival, release size/performance/battery budgets and R8 runtime behavior are unverified.
-- Production application ID, publisher and signing remain release inputs. No unanswered product choice blocks Phase 1.
+| Commit | Change |
+|---|---|
+| `d336d40` | Model contracts and validated persistence |
+| `a74098d` | Android alarm, clock, wake and recovery adapters |
+| `617e4b3` | Guarded playback/fade pipeline and tests |
+| `4348cb2` | Serial engine and foreground execution |
+| `73c6ea3` | App wiring and ordinary notifications |
+| `719f344` | Debug local test-player harness |
 
-## Phone smoke steps when connected
+## Phone commands
 
-1. Enable USB debugging, connect the Android 15 phone and accept USB authorization.
-2. From the repository root:
+From the project root, after connecting/authorizing USB debugging:
 
-   ```sh
-   export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
-   export PATH="$JAVA_HOME/bin:$PATH"
-   ./gradlew :app:installDebug
-   ```
+```sh
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+export PATH="$JAVA_HOME/bin:$HOME/Library/Android/sdk/platform-tools:$PATH"
+adb devices -l
+./gradlew :app:installDebug
+adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity
+```
 
-3. Open **Sleep timer**. Expect the Home app bar/tune action with an empty body at this phase. Tap **Open settings**, then return using the arrow and system Back.
-4. Rotate on both destinations; Settings should survive rotation. Repeat at 200% font, RTL and TalkBack where available; actions must remain reachable.
-5. Repeat with system light/dark themes and different wallpaper colors. Cold-launch in dark mode to inspect splash/bar flashes. Check gesture and three-button navigation insets where available.
-6. There is no playback timer yet. These screens should initiate no audio, permission prompt, foreground service, wake lock or screen locking.
+Start music, then run the actual ten-second timer:
 
-Repeat on API 26/37 once approved emulators exist. No device is needed for host development.
+```sh
+adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity -a com.sujal.sleeptimer.debug.TEST
+```
 
-## Next phase
+Allow notifications in Android app settings to see ongoing controls/results. [PHASE1_TESTING.md](PHASE1_TESTING.md) includes two-minute runs, controlled silent test-player modes, forced-Doze cleanup and recovery checks.
 
-After the owner's next continuation: **Phase 1 Reliability core** from PLAN. Implement model/commands/effects, versioned DataStores, service/alarm/wake-lock ownership, basic notification, real stop pipeline, safe fade/restore, debug testplayer and deterministic/Robolectric coverage. Preserve Stop-as-cancel. Resolve timing quota, WIU and playback-observation gates before claiming reliable device stopping. Stop at the phase boundary and report evidence/skips honestly.
+## Next step
+
+When the phone is connected, collect Phase 1 runtime evidence and resolve any failures. If device testing stays deferred, the next implementation phase is **Phase 2 Home UI**, requiring the owner's next continuation. Do not silently claim the pending runtime gates passed.

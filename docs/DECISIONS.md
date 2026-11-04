@@ -187,3 +187,34 @@ Sources: [Android 8 adaptive-icon parser](https://raw.githubusercontent.com/aosp
 ## D028 — Make app-bar action bounds explicitly accessible
 
 **Accepted.** The pinned Expressive icon button reported a 40 dp semantic layout width in host tests. Its platform touch expansion may be larger, but the brief requires reliable 48 dp targets and accessible traversal. Give both app-bar icon buttons explicit 48 dp layout bounds, retaining the supplied M3 component and 24 dp symbol. Test these bounds in normal and 200% font/RTL navigation rather than relying on invisible expansion.
+
+## D029 — Gate execution on an actual foreground service
+
+**Accepted for Phase 1.** Creating the application graph restores durable state but does not acquire runtime wake locks. The service promotes immediately, then enables engine execution. Losing the service releases runtime effects while preserving alarms. A valid alarm may run a bounded stop handoff even when foreground startup is denied; it cannot manufacture Android 17 audio privileges. Persisted start provenance is never used as proof that a recreated service has while-in-use capability.
+
+Notification actions carry the expected run ID. Separate taps receive separate delivery IDs, while explicit retried commands are deduplicated. Stop durably records cancellation before recovering a partial fade, so restarting during cancellation cannot accidentally pause playback.
+
+Sources: [foreground-service launch](https://developer.android.com/develop/background-work/services/fgs/launch), [special-use service type](https://developer.android.com/develop/background-work/services/fgs/service-types#special-use), [Android 17 background audio](https://developer.android.com/about/versions/17/changes/bg-audio).
+
+## D030 — Prefer skipping an uncertain fade over an unsafe restore
+
+**Accepted with a material limitation.** Public playback configurations may be anonymized, and connected audio devices do not identify another app's actual route. Fade/restore therefore require an observable media-session state and, on API 33+, a single connected output agreeing with the public media-routing prediction. Ambiguous routes and API 26–32 skip volume changes. Playback stopping still uses available media sessions, safe focus requests and PAUSE keys. Without notification access, test results explicitly describe local playback only. This conservative policy means universal fade support is not implemented and must not be claimed in device results.
+
+Normal `MODIFY_AUDIO_SETTINGS` is required for stream-volume changes and was missing from the brief's permission table; include it without adding any network permission. Read back every write, stop on user/route changes, and expire automatic restoration after two minutes. An explicit cancel/extend may ramp back gradually under the same route/index guards.
+
+Sources: [AudioManager](https://developer.android.com/reference/android/media/AudioManager), [active playback configurations](https://developer.android.com/reference/android/media/AudioManager#getActivePlaybackConfigurations()), [audio-device routing prediction](https://developer.android.com/reference/android/media/AudioManager#getAudioDevicesForAttributes(android.media.AudioAttributes)).
+
+## D031 — Keep Phase 1 controls in a debug test harness
+
+**Accepted.** The production Home layout arrives in Phase 2. For Phase 1, debug-only Activity actions exercise the real service/engine from a visible Activity; release builds ignore these actions. A separate debug-only test player uses a bundled local tone, real MediaPlayer/MediaSession and selectable focus behavior. Its default output is silent at the player, without changing the shared music-stream volume. Basic silent notifications provide cancel/extend; promoted notifications remain Phase 4.
+
+Call/alarm deferral uses a bounded two-hour wake lease with elapsed-time polling. This is conservative and potentially costly during a long call; battery measurements and callback-based refinement remain hardening work. No exact-alarm or notification permission dialog is exposed before the contextual flows in Phase 3, so debug tests must record the permission state and may exercise the full-run wake-lock fallback.
+
+
+## D032 — Preserve fail-closed guards and isolate failures at the actor boundary
+
+**Accepted.** Split the engine into command, execution, timing and rule files; bundle explicit ports in `TimerDependencies`. Playback stages are separate helpers. Retain narrow, commented detekt exceptions for early safety returns and unexpected storage/OEM binder failures. Cancellation is always propagated separately. No lint baseline, global analyzer threshold increase or disabled safety check is used.
+
+Android 15's `ApplicationStartInfo.wasForceStopped()` is the unambiguous stopped-package signal. Query the current PID's startup record before restoring an active run, cancel that run, and retain an interrupted result rather than silently resume it. API 30+ exit reason codes are recorded locally when available. Older platforms lack this startup flag; force-stop detection remains incomplete there, and no claim of surviving force-stop is made. Device behavior still needs verification.
+
+Sources: [ApplicationStartInfo.wasForceStopped](https://developer.android.com/reference/android/app/ApplicationStartInfo#wasForceStopped()), [Android 15 stopped-package behavior](https://developer.android.com/about/versions/15/behavior-changes-all#stopped-state), [MediaPlayer state and resource ownership](https://developer.android.com/media/platform/mediaplayer/state-resources).
