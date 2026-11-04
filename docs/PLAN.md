@@ -4,7 +4,7 @@ Planning date: 2026-11-03 (Asia/Kolkata).
 
 ## Scope and current gate
 
-The owner authorized **Phase 1 Reliability core** after Foundation. This task stops before Home UI (Phase 2). Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
+The owner authorized **Phase 2 Home UI** after the Reliability core host checks. This task stops before the complete Settings/features phase. Physical-device reliability evidence remains pending. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
 
 The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../design) visually inspected. The PDF duplicates those references. The product priority is reliable playback stopping, followed by safe volume handling, platform-native presentation, accessibility, and low battery use. A disconnected phone does not block implementation; unavailable runtime tests are reported as skipped.
 
@@ -164,3 +164,8 @@ Physical shake traces, overnight timing, OEM survival, hearing-safety/Bluetooth 
 The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Reliability core. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
 
 Phase 1 host implementation and checks are complete; the physical-device exit evidence remains pending. Stop before Phase 2. PROGRESS and PHASE1_TESTING identify the remaining evidence and exact phone commands.
+
+
+## Phase 2 execution
+
+Add idle/running/finished Home, keyboard/TalkBack dial, connected presets, Custom/Nightly sheets, real engine commands and adaptive Expressive motion. Nightly requires a functional scheduler to avoid an inert switch; include that supporting dependency with its sheet. Complete Settings, shake and screen locking remain Phase 3. Render the shake card only while monitoring is actually active. Preserve the pending phone/Doze gates.

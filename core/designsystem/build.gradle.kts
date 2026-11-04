@@ -11,6 +11,7 @@ dependencies {
     api(libs.androidx.compose.material3)
     api(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.foundation)
+    api(libs.androidx.compose.animation)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)

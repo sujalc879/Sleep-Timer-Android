@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 internal fun TimerCommand.deliveryId(): String? = when (this) {
+    is TimerCommand.SelectDuration -> commandId
     is TimerCommand.Start -> commandId
     is TimerCommand.StartTest -> commandId
     is TimerCommand.Stop -> commandId

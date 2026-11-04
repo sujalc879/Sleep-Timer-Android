@@ -6,12 +6,15 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.sujal.sleeptimer.core.model.PlaybackController
 import com.sujal.sleeptimer.core.model.RuntimeCapabilities
 import com.sujal.sleeptimer.core.timer.TimerAppScope
 import com.sujal.sleeptimer.core.timer.TimerGateway
 import com.sujal.sleeptimer.core.timer.TimerServiceIntents
+import com.sujal.sleeptimer.feature.home.HomeRoute
+import com.sujal.sleeptimer.feature.home.HomeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
 import javax.inject.Inject
@@ -20,6 +23,8 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val homeViewModel: HomeViewModel by viewModels()
+
     @Inject lateinit var capabilities: RuntimeCapabilities
 
     @Inject lateinit var gateway: TimerGateway
@@ -33,7 +38,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { SleepTimerApp() }
+        setContent { SleepTimerApp(homeContent = { onSettings -> HomeRoute(homeViewModel, onSettings) }) }
     }
 
     override fun onPostResume() {

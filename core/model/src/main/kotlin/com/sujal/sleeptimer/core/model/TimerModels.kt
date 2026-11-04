@@ -110,6 +110,7 @@ data class TimerSnapshot(
     val lastResult: StopResult? = null,
     val acceptedCommandIds: List<String> = emptyList(),
     val needsAlarmReconcile: Boolean = false,
+    val lastNightlyCommandId: String? = null,
 )
 
 val TimerSnapshot.isActive: Boolean
@@ -128,6 +129,7 @@ data class TimerUiState(
 )
 
 sealed interface TimerCommand {
+    data class SelectDuration(val durationMillis: Long, val commandId: String) : TimerCommand
     data class Start(
         val durationMillis: Long,
         val source: StartSource,

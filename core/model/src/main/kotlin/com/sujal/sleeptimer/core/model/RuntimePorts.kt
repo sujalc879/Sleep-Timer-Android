@@ -92,6 +92,10 @@ class EffectToken internal constructor(private val gate: EffectGate, private val
 }
 
 class RuntimeCapabilities {
+    @Volatile var shakeMonitoringActive: Boolean = false
+
+    @Volatile var screenLockAvailable: Boolean = false
+
     @Volatile var foregroundServiceActive: Boolean = false
 
     @Volatile var foregroundServiceHasWhileInUse: Boolean = false

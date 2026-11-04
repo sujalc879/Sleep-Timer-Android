@@ -50,6 +50,15 @@ class TimerGateway @Inject constructor(
 
     fun ensureForeground(): Boolean = startService(TimerServiceIntents.base(context, TimerServiceIntents.RECONCILE))
 
+    fun startScheduled(durationMillis: Long, commandId: String): Boolean {
+        val command = TimerCommand.Start(durationMillis, StartSource.NIGHTLY, false, commandId)
+        val intent = TimerServiceIntents.base(context, TimerServiceIntents.START)
+            .putExtra(TimerServiceIntents.DURATION, durationMillis)
+            .putExtra(TimerServiceIntents.SOURCE, StartSource.NIGHTLY.name)
+            .putExtra(TimerServiceIntents.COMMAND_ID, commandId)
+        return deliver(intent, command)
+    }
+
     private fun deliver(intent: Intent, fallback: TimerCommand): Boolean {
         if (startService(intent)) return true
         scope.launch {

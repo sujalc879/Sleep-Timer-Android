@@ -11,7 +11,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.sujal.sleeptimer.core.designsystem.SleepTimerTheme
-import com.sujal.sleeptimer.feature.home.HomeScreen
 import com.sujal.sleeptimer.feature.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
@@ -23,6 +22,7 @@ internal data object Settings : NavKey
 
 @Composable
 fun SleepTimerApp(
+    homeContent: @Composable (onSettings: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
@@ -40,11 +40,9 @@ fun SleepTimerApp(
                 onBack = navigateBack,
                 entryProvider = entryProvider {
                     entry<Home> {
-                        HomeScreen(
-                            onSettingsClick = {
-                                if (backStack.lastOrNull() != Settings) backStack.add(Settings)
-                            },
-                        )
+                        homeContent {
+                            if (backStack.lastOrNull() != Settings) backStack.add(Settings)
+                        }
                     }
                     entry<Settings> { SettingsScreen(onBackClick = navigateBack) }
                 },

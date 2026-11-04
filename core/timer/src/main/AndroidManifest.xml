@@ -17,6 +17,7 @@
                 android:value="User-started sleep timer; monitors an elapsed deadline and pauses external media playback." />
         </service>
         <receiver android:name=".TimerAlarmReceiver" android:exported="false" />
+        <receiver android:name=".NightlyAlarmReceiver" android:exported="false" />
         <receiver android:name=".TimerSystemReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

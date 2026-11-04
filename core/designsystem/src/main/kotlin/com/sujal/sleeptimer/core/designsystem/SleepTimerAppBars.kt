@@ -19,7 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SleepTimerHomeTopAppBar(onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SleepTimerHomeTopAppBar(onSettingsClick: () -> Unit, modifier: Modifier = Modifier, showSettings: Boolean = true) {
     TopAppBar(
         title = {
             Text(
@@ -29,11 +29,13 @@ fun SleepTimerHomeTopAppBar(onSettingsClick: () -> Unit, modifier: Modifier = Mo
         },
         modifier = modifier,
         actions = {
-            IconButton(onClick = onSettingsClick, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_tune),
-                    contentDescription = stringResource(R.string.sleeptimer_open_settings),
-                )
+            if (showSettings) {
+                IconButton(onClick = onSettingsClick, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_tune),
+                        contentDescription = stringResource(R.string.sleeptimer_open_settings),
+                    )
+                }
             }
         },
     )

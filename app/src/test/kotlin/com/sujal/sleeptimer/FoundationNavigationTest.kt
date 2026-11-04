@@ -32,7 +32,9 @@ class FoundationNavigationTest {
     @Test
     fun settingsActionAndBackReturnToHome() {
         composeRule.setContent {
-            SleepTimerApp(darkTheme = false, dynamicColor = false)
+            SleepTimerApp(homeContent = { action ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, darkTheme = false, dynamicColor = false)
         }
 
         composeRule.onNodeWithText("Sleep timer").assertIsDisplayed()
@@ -56,7 +58,9 @@ class FoundationNavigationTest {
     @Test
     fun systemBackFromSettingsReturnsToHome() {
         composeRule.setContent {
-            SleepTimerApp(darkTheme = true, dynamicColor = false)
+            SleepTimerApp(homeContent = { action ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, darkTheme = true, dynamicColor = false)
         }
         composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Settings").assertIsDisplayed()
@@ -73,7 +77,9 @@ class FoundationNavigationTest {
     fun settingsDestinationSurvivesCompositionSavedStateRestoration() {
         val restorationTester = StateRestorationTester(composeRule)
         restorationTester.setContent {
-            SleepTimerApp(darkTheme = false, dynamicColor = false)
+            SleepTimerApp(homeContent = { action ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, darkTheme = false, dynamicColor = false)
         }
         composeRule.onNodeWithContentDescription("Open settings").performClick()
         composeRule.onNodeWithText("Settings").assertIsDisplayed()
@@ -93,7 +99,9 @@ class FoundationNavigationTest {
                 LocalDensity provides Density(density = density, fontScale = 2f),
                 LocalLayoutDirection provides LayoutDirection.Rtl,
             ) {
-                SleepTimerApp(darkTheme = true, dynamicColor = false)
+                SleepTimerApp(homeContent = { action ->
+                    com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+                }, darkTheme = true, dynamicColor = false)
             }
         }
 

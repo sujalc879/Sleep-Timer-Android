@@ -67,6 +67,8 @@ class TimerAlarmReceiver : BroadcastReceiver() {
 
 @AndroidEntryPoint
 class TimerSystemReceiver : BroadcastReceiver() {
+    @Inject lateinit var nightly: NightlyController
+
     @Inject lateinit var engine: TimerEngine
 
     @Inject lateinit var gateway: TimerGateway
@@ -85,6 +87,7 @@ class TimerSystemReceiver : BroadcastReceiver() {
         scope.launch {
             try {
                 withTimeout(RECEIVER_TIMEOUT) {
+                    nightly.reconcile()
                     engine.send(TimerCommand.Reconcile(action, executionAllowed = capabilities.foregroundServiceActive))
                     if (engine.state.value.snapshot.isActive) gateway.ensureForeground()
                 }

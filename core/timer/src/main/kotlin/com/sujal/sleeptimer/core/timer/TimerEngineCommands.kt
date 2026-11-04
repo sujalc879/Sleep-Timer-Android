@@ -111,26 +111,14 @@ internal suspend fun EngineRuntime.handleCommand(command: TimerCommand): Command
     }
     if (id != null && id in snapshot.acceptedCommandIds) return CommandResult(false, "Duplicate command")
     return when (command) {
+        is TimerCommand.SelectDuration -> selectDuration(command)
         is TimerCommand.Start -> start(command.durationMillis, command.source, command.hasWhileInUse, command.commandId)
-
-        is TimerCommand.StartTest -> start(
-            TEST_DURATION,
-            StartSource.TEST,
-            command.hasWhileInUse,
-            command.commandId,
-            true,
-        )
-
+        is TimerCommand.StartTest -> startTest(command)
         is TimerCommand.Stop -> cancelTimer(command)
-
         is TimerCommand.Extend -> adjust(command.deltaMillis, command.commandId, command.expectedRunId, extend = true)
-
         is TimerCommand.Reduce -> adjust(command.deltaMillis, command.commandId, command.expectedRunId, extend = false)
-
         is TimerCommand.AlarmFired -> alarmFired(command)
-
         is TimerCommand.Reconcile -> reconcile(command)
-
         is TimerCommand.SettingsChanged -> changeSettings(command.settings)
     }
 }
@@ -148,7 +136,17 @@ internal suspend fun EngineRuntime.start(
     ) {
         return CommandResult(false, "Invalid duration")
     }
-    if (source == StartSource.NIGHTLY && snapshot.isActive) return CommandResult(false, "Timer already running")
+    if (source == StartSource.NIGHTLY) {
+        if (snapshot.lastNightlyCommandId ==
+            commandId
+        ) {
+            return CommandResult(false, "Nightly occurrence already handled")
+        }
+        if (snapshot.isActive) {
+            commit(snapshot.copy(lastNightlyCommandId = commandId, acceptedCommandIds = snapshot.remember(commandId)))
+            return CommandResult(false, "Timer already running")
+        }
+    }
     val old = snapshot
     val previous = deactivate()
     val now = clock.elapsedRealtime()
@@ -171,6 +169,7 @@ internal suspend fun EngineRuntime.start(
             scheduleGeneration = old.scheduleGeneration + 1,
             selectedDurationMillis = if (test) old.selectedDurationMillis else duration,
             acceptedCommandIds = old.remember(commandId),
+            lastNightlyCommandId = if (source == StartSource.NIGHTLY) commandId else old.lastNightlyCommandId,
             needsAlarmReconcile = true,
         ),
     )

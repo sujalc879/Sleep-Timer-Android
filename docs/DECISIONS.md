@@ -218,3 +218,12 @@ Call/alarm deferral uses a bounded two-hour wake lease with elapsed-time polling
 Android 15's `ApplicationStartInfo.wasForceStopped()` is the unambiguous stopped-package signal. Query the current PID's startup record before restoring an active run, cancel that run, and retain an interrupted result rather than silently resume it. API 30+ exit reason codes are recorded locally when available. Older platforms lack this startup flag; force-stop detection remains incomplete there, and no claim of surviving force-stop is made. Device behavior still needs verification.
 
 Sources: [ApplicationStartInfo.wasForceStopped](https://developer.android.com/reference/android/app/ApplicationStartInfo#wasForceStopped()), [Android 15 stopped-package behavior](https://developer.android.com/about/versions/15/behavior-changes-all#stopped-state), [MediaPlayer state and resource ownership](https://developer.android.com/media/platform/mediaplayer/state-resources).
+
+
+## D033 — Wire Home to durable commands and real capabilities
+
+**Accepted for Phase 2.** Home observes the existing engine through a lifecycle-aware ViewModel. Display ticks recompute elapsed remaining time; they never schedule playback stopping. Duration selection is a serial engine command, and user Stop remains cancellation. Show the finished message only for a confirmed stop, with honest messages for silence, failure and interruption.
+
+Nightly's Home sheet requires a functional alarm-backed schedule, so its narrow scheduling dependency lands with this phase rather than exposing an inert switch. Complete Settings and OEM guidance remain Phase 3. Shake presentation checks actual monitoring capability; a stored default-on preference alone must not promise working detection. Screen-lock steps likewise require a working capability.
+
+The pinned Material 3 1.5.0-beta02 source supplies connected toggle shapes, expressive Button shapes, Text auto-sizing, wavy progress and TimePicker. Keep experimental Expressive opt-ins in the design system. Use shared bounds and the theme's expressive spatial/effect specs for dial motion. At narrow widths/large fonts, allow scrolling and wrap controls. Countdown text uses system-font tabular figures and fitting only inside the dial; ordinary copy follows font scale.
