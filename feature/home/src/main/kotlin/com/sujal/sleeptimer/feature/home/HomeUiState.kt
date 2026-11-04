@@ -18,6 +18,7 @@ data class HomeUiState(
     val settings: AppSettings = AppSettings(),
     val finished: StopResult? = null,
     val lastTest: StopResult? = null,
+    val currentResult: StopResult? = null,
     val exactAlarmsAllowed: Boolean = false,
     val notificationsAllowed: Boolean = false,
     val batteryUnrestricted: Boolean = false,
@@ -28,7 +29,7 @@ data class HomeUiState(
 ) {
     val running: Boolean get() = runId != null
     val displayMillis: Long get() = if (running) remainingMillis else durationMillis
-    val needsAttention: Boolean get() = !exactAlarmsAllowed || (running && degradedReason != null)
+    val needsAttention: Boolean get() = !exactAlarmsAllowed || degradedReason != null
 }
 
 internal fun countdown(millis: Long, locale: Locale): String {
@@ -48,6 +49,7 @@ internal fun countdown(millis: Long, locale: Locale): String {
     }
 }
 
+@Suppress("ReturnCount") // Invalid typed fields fail closed independently.
 internal fun customDuration(hours: String, minutes: String): Long? {
     val hour = hours.toIntOrNull() ?: return null
     val minute = minutes.toIntOrNull() ?: return null
@@ -62,3 +64,7 @@ private const val MAX_HOURS = 12
 private const val MINUTES_PER_HOUR = 60
 private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 3_600
+
+@Suppress("MagicNumber") // Product's connected preset choices, expressed directly.
+internal val PRESET_MINUTES = listOf(15, 30, 45, 60)
+internal const val REDUCE_MILLIS = 5 * TimerLimits.MINUTE

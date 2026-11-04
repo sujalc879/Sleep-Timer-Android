@@ -5,7 +5,6 @@ package com.sujal.sleeptimer.core.designsystem
 import android.animation.ValueAnimator
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
@@ -19,34 +18,24 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.semantics.CustomAccessibilityAction
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -55,9 +44,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.roundToInt
 import kotlin.math.sin
-
 
 @Composable
 fun SleepTimerDial(
@@ -80,7 +67,7 @@ fun SleepTimerDial(
             change(bounded)
         }
     }
-    val interactive = dialInput(presentation, update, finish)
+    val interactive = Modifier.dialInput(presentation, update, finish)
     Box(
         modifier = modifier.then(interactive).semantics(mergeDescendants = true) {
             contentDescription = presentation.controlLabel
@@ -99,6 +86,7 @@ fun SleepTimerDial(
                 stroke = stroke,
                 trackStroke = stroke,
                 amplitude = { if (animate) (it / WAVE_FLATTEN_POINT).coerceIn(0f, 1f) else 0f },
+                wavelength = 80.dp,
                 waveSpeed = if (animate) 10.dp else 0.dp,
             )
         } else {
@@ -118,22 +106,25 @@ private fun IdleDial(minutes: Int, onChange: (Int) -> Unit, onFinish: () -> Unit
     val thumbRadius = with(LocalDensity.current) { 14.dp.toPx() }
     val touchRadius = with(LocalDensity.current) { 28.dp.toPx() }
     val stroke = with(LocalDensity.current) { Stroke(12.dp.toPx(), cap = StrokeCap.Round) }
-    Canvas(modifier.pointerInput(Unit) {
-        awaitEachGesture {
-            val down = awaitFirstDown(requireUnconsumed = false)
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val radius = minOf(size.width, size.height) / 2f - thumbRadius
-            val angle = value.coerceIn(1, MINUTES_PER_TURN) * DEGREES_PER_MINUTE
-            if ((down.position - dialPoint(center, radius, angle)).getDistance() > touchRadius) return@awaitEachGesture
-            down.consume()
-            val dragState = DialDrag(value, pointerAngle(down.position, center))
-            drag(down.id) { pointer ->
-                pointer.consume()
-                change(dragState.move(pointerAngle(pointer.position, center)))
+    Canvas(
+        modifier.pointerInput(Unit) {
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val radius = minOf(size.width, size.height) / 2f - thumbRadius
+                val angle = value.coerceIn(1, MINUTES_PER_TURN) * DEGREES_PER_MINUTE
+                val nearThumb = (down.position - dialPoint(center, radius, angle)).getDistance() <= touchRadius
+                if (!nearThumb) return@awaitEachGesture
+                down.consume()
+                val dragState = DialDrag(value, pointerAngle(down.position, center))
+                drag(down.id) { pointer ->
+                    pointer.consume()
+                    change(dragState.move(pointerAngle(pointer.position, center)))
+                }
+                finish()
             }
-            finish()
-        }
-    }.clearAndSetSemantics {}) {
+        }.clearAndSetSemantics {},
+    ) {
         val center = Offset(size.width / 2, size.height / 2)
         val radius = size.minDimension / 2 - thumbRadius
         val sweep = minutes.coerceIn(1, MINUTES_PER_TURN) * DEGREES_PER_MINUTE
@@ -161,16 +152,19 @@ private const val WAVE_FLATTEN_POINT = 0.03f
 
 @Composable
 private fun DialText(presentation: DialPresentation) {
-        Column(
-            modifier = Modifier.width(230.dp).padding(horizontal = 4.dp).clearAndSetSemantics {},
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (presentation.message != null) Text(
+    Column(
+        modifier = Modifier.width(230.dp).padding(horizontal = 4.dp).clearAndSetSemantics {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (presentation.message != null) {
+            Text(
                 text = presentation.message,
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface,
-            ) else Text(
+            )
+        } else {
+            Text(
                 text = presentation.countdown,
                 style = TextStyle(fontSize = 72.sp, fontFeatureSettings = "tnum", letterSpacing = (-2).sp),
                 autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = 72.sp, stepSize = 1.sp),
@@ -178,13 +172,14 @@ private fun DialText(presentation: DialPresentation) {
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
-            Text(
-                text = presentation.endLabel,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
         }
+        Text(
+            text = presentation.endLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 private const val QUARTER_TURN = 90f

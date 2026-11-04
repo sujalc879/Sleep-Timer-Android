@@ -1,6 +1,8 @@
 package com.sujal.sleeptimer.feature.home
 
+import android.app.AlarmManager
 import android.content.Context
+import android.os.Build
 import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
@@ -18,6 +20,7 @@ import com.sujal.sleeptimer.core.timer.TimerEngine
 import com.sujal.sleeptimer.core.timer.TimerGateway
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.currentCoroutineContext
@@ -25,6 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -52,7 +56,20 @@ class HomeViewModel @Inject constructor(
             delay(DISPLAY_TICK)
         }
     }
-    val state = combine(engine.state, settings.data, ticks, selection, permissions) {
+    val state = combine(
+        engine.state,
+        settings.data.catch { error ->
+            if (error is IOException) {
+                messages.emit(R.string.command_failed)
+                emit(AppSettings())
+            } else {
+                throw error
+            }
+        },
+        ticks,
+        selection,
+        permissions,
+    ) {
             runtime,
             preferences,
             now,
@@ -82,8 +99,9 @@ class HomeViewModel @Inject constructor(
             },
             settings = preferences,
             finished = finished,
-            lastTest = snapshot.lastResult?.takeIf { it.isTest },
-            exactAlarmsAllowed = runtime.exactAlarmsAllowed,
+            lastTest = snapshot.lastTestResult,
+            currentResult = snapshot.lastResult,
+            exactAlarmsAllowed = access.exact,
             notificationsAllowed = access.notifications,
             batteryUnrestricted = access.batteryUnrestricted,
             notificationAccess = access.notificationAccess,
@@ -127,17 +145,34 @@ class HomeViewModel @Inject constructor(
 
     fun startTest(): Boolean = !state.value.running && gateway.testFromVisibleActivity()
     suspend fun isPlaying(): Boolean = playback.observe().playing
-    suspend fun saveNightly(settings: AppSettings): Boolean = nightly.save(settings)
+    suspend fun saveNightly(settings: AppSettings): Boolean = try {
+        nightly.save(settings)
+    } catch (_: IOException) {
+        false
+    }
 
     fun refreshAccess() {
-        permissions.value = readPermissions(context)
+        val access = readPermissions(context)
+        permissions.value = access
         viewModelScope.launch {
+            if (engine.state.value.exactAlarmsAllowed != access.exact) {
+                engine.send(
+                    TimerCommand.Reconcile(
+                        "exact-access-changed",
+                        executionAllowed = capabilities.foregroundServiceActive,
+                    ),
+                )
+            }
             if (engine.state.value.snapshot.run != null &&
                 !capabilities.foregroundServiceActive
             ) {
                 gateway.ensureForeground()
             }
-            nightly.reconcile()
+            try {
+                nightly.reconcile()
+            } catch (_: IOException) {
+                messages.emit(R.string.command_failed)
+            }
         }
     }
 
@@ -161,12 +196,16 @@ class HomeViewModel @Inject constructor(
 }
 
 private data class HomePermissions(
+    val exact: Boolean,
     val notifications: Boolean,
     val batteryUnrestricted: Boolean,
     val notificationAccess: Boolean,
 )
 
 private fun readPermissions(context: Context): HomePermissions = HomePermissions(
+    exact =
+        android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S ||
+            context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms(),
     notifications = NotificationManagerCompat.from(context).areNotificationsEnabled(),
     batteryUnrestricted = context.getSystemService(
         PowerManager::class.java,

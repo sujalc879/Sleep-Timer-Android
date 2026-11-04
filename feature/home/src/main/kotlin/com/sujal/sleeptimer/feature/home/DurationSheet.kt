@@ -16,8 +16,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +36,10 @@ import com.sujal.sleeptimer.core.model.TimerLimits
 internal fun DurationSheet(duration: Long, onDismiss: () -> Unit, onStart: (Long) -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberBottomSheetState(
+            SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+        ),
     ) {
         Column(
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -49,11 +53,7 @@ internal fun DurationSheet(duration: Long, onDismiss: () -> Unit, onStart: (Long
             val selected = customDuration(hours, minutes)
             DurationInputs(hours, minutes, { hours = it }, { minutes = it }) { selected?.let(onStart) }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(
-                    90 to R.string.ninety_minutes,
-                    120 to R.string.two_hours,
-                    180 to R.string.three_hours,
-                ).forEach { (value, label) ->
+                QUICK_DURATIONS.forEach { (value, label) ->
                     FilterChip(
                         selected = selected == value * TimerLimits.MINUTE,
                         onClick = {
@@ -106,3 +106,10 @@ internal fun DurationInputs(
 
 internal const val MINUTES_IN_HOUR = 60
 internal const val HOUR = 60 * TimerLimits.MINUTE
+
+@Suppress("MagicNumber") // Product's custom quick choices in minutes.
+private val QUICK_DURATIONS = listOf(
+    90 to R.string.ninety_minutes,
+    120 to R.string.two_hours,
+    180 to R.string.three_hours,
+)

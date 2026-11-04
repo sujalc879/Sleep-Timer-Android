@@ -28,7 +28,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -67,10 +67,11 @@ fun HomeScreen(
 
 @Composable
 private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
-    val adaptive = currentWindowAdaptiveInfo()
+    val adaptive = currentWindowAdaptiveInfoV2()
     BoxWithConstraints(modifier) {
-        val wide = maxWidth >= 600.dp || (maxHeight < 480.dp && !adaptive.windowPosture.isTabletop)
-        val largeFont = LocalDensity.current.fontScale >= 1.5f
+        val wide =
+            maxWidth >= EXPANDED_WIDTH.dp || (maxHeight < COMPACT_HEIGHT.dp && !adaptive.windowPosture.isTabletop)
+        val largeFont = LocalDensity.current.fontScale >= LARGE_FONT_SCALE
         val minimumHeight = if (wide) {
             360.dp
         } else if (largeFont) {
@@ -92,7 +93,7 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modi
                     rememberSharedContentState("timer-dial"),
                     this,
                     boundsTransform = { _, _ -> spatial },
-                    resizeMode = SharedTransitionScope.ResizeMode.ScaleToBounds(),
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
                 )
                 val primaryModifier = Modifier.sharedBounds(
                     rememberSharedContentState("primary-action"),
@@ -103,41 +104,7 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modi
                 val content = current.fillMaxWidth().verticalScroll(
                     rememberScrollState(),
                 ).height(bodyHeight).padding(16.dp)
-                if (wide) {
-                    Row(
-                        content,
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (!running) StatusChips(state, actions)
-                            HomeDial(state, actions, dialModifier)
-                        }
-                        Column(
-                            Modifier.weight(1f).widthIn(max = 420.dp),
-                            verticalArrangement = Arrangement.spacedBy(24.dp),
-                        ) {
-                            if (running) RunningDetails(state) else Presets(state, actions)
-                            BottomActions(state, actions, running, primaryModifier)
-                        }
-                    }
-                } else {
-                    Column(content, horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (!running) StatusChips(state, actions)
-                        if (!running) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(8.dp))
-                        HomeDial(state, actions, dialModifier)
-                        if (running) {
-                            Spacer(Modifier.height(24.dp))
-                            RunningDetails(state)
-                        }
-                        Spacer(Modifier.weight(1f))
-                        if (!running) {
-                            Presets(state, actions)
-                            Spacer(Modifier.height(28.dp))
-                        }
-                        BottomActions(state, actions, running, primaryModifier)
-                    }
-                }
+                HomePanels(state, actions, running, wide, content, dialModifier, primaryModifier)
             }
         }
     }
@@ -167,3 +134,55 @@ private fun StatusChips(state: HomeUiState, actions: HomeActions) {
         )
     }
 }
+
+private const val COMPACT_HEIGHT = 480
+
+@Composable
+private fun HomePanels(
+    state: HomeUiState,
+    actions: HomeActions,
+    running: Boolean,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+    dialModifier: Modifier = Modifier,
+    primaryModifier: Modifier = Modifier,
+) {
+    if (wide) {
+        Row(
+            modifier,
+            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (!running) StatusChips(state, actions)
+                HomeDial(state, actions, dialModifier)
+            }
+            Column(
+                Modifier.weight(1f).widthIn(max = 420.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                if (running) RunningDetails(state) else Presets(state, actions)
+                BottomActions(state, actions, running, primaryModifier)
+            }
+        }
+    } else {
+        Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+            if (!running) StatusChips(state, actions)
+            if (!running) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(8.dp))
+            HomeDial(state, actions, dialModifier)
+            if (running) {
+                Spacer(Modifier.height(24.dp))
+                RunningDetails(state)
+            }
+            Spacer(Modifier.weight(1f))
+            if (!running) {
+                Presets(state, actions)
+                Spacer(Modifier.height(28.dp))
+            }
+            BottomActions(state, actions, running, primaryModifier)
+        }
+    }
+}
+private const val EXPANDED_WIDTH = 600
+
+private const val LARGE_FONT_SCALE = 1.5f

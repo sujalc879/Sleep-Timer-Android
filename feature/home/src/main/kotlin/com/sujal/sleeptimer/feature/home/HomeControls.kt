@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
@@ -47,7 +48,12 @@ internal fun HomeDial(state: HomeUiState, actions: HomeActions, modifier: Modifi
         else -> end
     }
     val spokenMinutes = (state.displayMillis / TimerLimits.MINUTE).toInt().coerceAtLeast(1)
-    val spoken = context.resources.getQuantityString(R.plurals.spoken_minutes, spokenMinutes, spokenMinutes)
+    val seconds = ((state.displayMillis + TimerLimits.SECOND - 1) / TimerLimits.SECOND).toInt()
+    val spoken = if (state.running && state.displayMillis < TimerLimits.MINUTE) {
+        pluralStringResource(R.plurals.spoken_seconds, seconds, seconds)
+    } else {
+        pluralStringResource(R.plurals.spoken_minutes, spokenMinutes, spokenMinutes)
+    }
     val message = state.finished?.let {
         stringResource(
             when (it.status) {
@@ -77,7 +83,7 @@ internal fun HomeDial(state: HomeUiState, actions: HomeActions, modifier: Modifi
 
 @Composable
 internal fun Presets(state: HomeUiState, actions: HomeActions) {
-    val options = listOf(15, 30, 45, 60).map { TimerChoice(stringResource(R.string.preset, it), it) }
+    val options = PRESET_MINUTES.map { TimerChoice(stringResource(R.string.preset, it), it) }
     SleepTimerConnectedChoices(
         options,
         setOf((state.durationMillis / TimerLimits.MINUTE).toInt()),
@@ -103,7 +109,14 @@ internal fun RunningDetails(state: HomeUiState) {
                         MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        stringResource(R.string.shake_card, state.settings.extendMillis / TimerLimits.MINUTE),
+                        pluralStringResource(
+                            R.plurals.shake_card,
+                            (state.settings.extendMillis / TimerLimits.MINUTE).toInt(),
+                            (
+                                state.settings.extendMillis /
+                                    TimerLimits.MINUTE
+                                ).toInt(),
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -130,7 +143,7 @@ internal fun RunningDetails(state: HomeUiState) {
 }
 
 @Composable
-internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Boolean, primary: Modifier = Modifier) {
+internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Boolean, modifier: Modifier = Modifier) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -140,7 +153,7 @@ internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Bo
             FilledTonalButton(
                 actions.onReduce,
                 Modifier.weight(1f).heightIn(min = 56.dp),
-                enabled = state.remainingMillis > 5 * TimerLimits.MINUTE,
+                enabled = state.remainingMillis > REDUCE_MILLIS,
                 contentPadding = PaddingValues(horizontal = 8.dp),
             ) {
                 Text(stringResource(R.string.reduce), textAlign = TextAlign.Center)
@@ -157,7 +170,7 @@ internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Bo
             running,
             stringResource(if (running) R.string.stop else R.string.start),
             if (running) actions.onStop else actions.onStart,
-            primary,
+            modifier,
         )
         if (running) {
             FilledTonalButton(

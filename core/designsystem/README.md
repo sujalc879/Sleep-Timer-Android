@@ -59,3 +59,10 @@ The imported view-theme tint was removed because Compose supplies semantic tint.
 - `SleepTimerSettingsScaffold(onBackClick, content)` connects the heading to its content's nested scrolling and passes insets as `PaddingValues`.
 
 Destination content must consume the scaffold padding and insets. These are Foundation components; timer controls and setting rows arrive in their designated phases.
+
+
+## Home controls
+
+Phase 2 adds the bounded circular duration dial, semantic range/keyboard actions, connected expressive choices, morphing Start/Stop button, TimePicker wrapper and the Material circular wavy indicator. Countdown text uses the system font with tabular figures. The only custom drawing is the interactive idle dial; the running wave is the supplied Material component. Shared bounds use the theme's expressive motion scheme.
+
+Additional used symbols are the official Rounded `play_arrow`, `stop`, `schedule`, `bedtime`, `check_circle`, `warning`, `timer`, `vibration` and `more_horiz` vectors. Each XML records its exact source URL. Compose supplies role-based tint; no icon-font dependency was added. See DECISIONS D033–D035 for current API equivalents and the wave parameter correction.
