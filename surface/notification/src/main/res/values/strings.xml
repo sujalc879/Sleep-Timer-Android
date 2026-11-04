@@ -1,0 +1,22 @@
+<resources>
+    <string name="less_than_minute">Less than 1 min</string>
+    <string name="timer_channel">Running timer</string>
+    <string name="result_channel">Timer results</string>
+    <string name="preparing_timer">Preparing sleep timer</string>
+    <string name="ends_at">Ends at %1$s</string>
+    <string name="waiting_for_call">Waiting for call or alarm to end</string>
+    <string name="stopping_playback">Stopping playback</string>
+    <string name="timer_needs_attention">Timer needs attention · open app</string>
+    <string name="extend_action">+%1$d min</string>
+    <string name="stop_action">Stop</string>
+    <string name="player_stopped">Your player stopped</string>
+    <string name="local_player_stopped">Local playback stopped</string>
+    <string name="player_still_playing">Your player is still playing</string>
+    <string name="nothing_playing">Nothing was playing</string>
+    <string name="test_no_playback">Play something and try the test again. Cast playback needs notification access.</string>
+    <string name="stop_method">Stopped using %1$s</string>
+    <string name="timer_interrupted">Your timer was interrupted</string>
+    <string name="open_app_to_resume">Open Sleep timer to check the timer.</string>
+    <string name="stop_failure_help">Try notification access and check battery settings. Some cast players cannot be verified.</string>
+    <plurals name="minutes_left"><item quantity="one">%d min left</item><item quantity="other">%d min left</item></plurals>
+</resources>

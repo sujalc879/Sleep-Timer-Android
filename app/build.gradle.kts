@@ -27,6 +27,12 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:model"))
+    implementation(project(":core:data"))
+    implementation(project(":core:timer"))
+    implementation(project(":core:system"))
+    implementation(project(":core:playback"))
+    implementation(project(":surface:notification"))
     implementation(project(":core:designsystem"))
     implementation(project(":feature:home"))
     implementation(project(":feature:settings"))
@@ -38,6 +44,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hilt.android)
+    implementation(libs.kotlinx.coroutines.android)
     ksp(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
