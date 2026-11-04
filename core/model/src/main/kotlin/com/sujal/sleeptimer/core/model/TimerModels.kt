@@ -108,6 +108,7 @@ data class TimerSnapshot(
     val selectedDurationMillis: Long = TimerLimits.DEFAULT_DURATION,
     val run: TimerRun? = null,
     val lastResult: StopResult? = null,
+    val lastTestResult: StopResult? = null,
     val acceptedCommandIds: List<String> = emptyList(),
     val needsAlarmReconcile: Boolean = false,
     val lastNightlyCommandId: String? = null,

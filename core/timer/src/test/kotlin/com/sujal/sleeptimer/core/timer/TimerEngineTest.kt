@@ -44,6 +44,46 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimerEngineCommandTest {
+    @Test fun lastCompletedTestSurvivesAnOrdinaryRunAndCancelledTest() = runTest {
+        val f = fixture()
+        f.send(TimerCommand.StartTest(true, "first-test"))
+        advanceTimeBy(TEST_SECONDS)
+        runCurrent()
+        val result = f.snapshot.lastTestResult
+        assertThat(result?.status).isEqualTo(StopStatus.STOPPED)
+        f.start(id = "ordinary-run")
+        assertThat(f.store.value.lastTestResult).isEqualTo(result)
+        f.send(TimerCommand.Stop("cancel-ordinary"))
+        f.send(TimerCommand.StartTest(true, "cancelled-test"))
+        f.send(TimerCommand.Stop("cancel-test"))
+        assertThat(f.snapshot.lastTestResult).isEqualTo(result)
+        f.engine.close()
+    }
+
+    @Test
+    fun selectionIsDurableAndCannotChangeAnActiveRun() = runTest {
+        val f = fixture()
+        assertThat(f.send(TimerCommand.SelectDuration(45 * TimerLimits.MINUTE, "select")).accepted).isTrue()
+        assertThat(f.store.value.selectedDurationMillis).isEqualTo(45 * TimerLimits.MINUTE)
+        f.start()
+        assertThat(f.send(TimerCommand.SelectDuration(0, "invalid")).accepted).isFalse()
+        assertThat(f.send(TimerCommand.SelectDuration(TimerLimits.MINUTE, "active")).accepted).isFalse()
+        assertThat(f.send(TimerCommand.StartTest(true, "test-while-active")).accepted).isFalse()
+        f.engine.close()
+    }
+
+    @Test
+    fun cancelledNightlyOccurrenceCannotRestartAfterCommandHistoryRotates() = runTest {
+        val f = fixture()
+        val nightly = TimerCommand.Start(TimerLimits.MINUTE, StartSource.NIGHTLY, false, "nightly:one")
+        assertThat(f.send(nightly).accepted).isTrue()
+        f.send(TimerCommand.Stop("stop-nightly"))
+        repeat(70) { f.send(TimerCommand.SelectDuration(TimerLimits.MINUTE, "select-$it")) }
+        assertThat(f.send(nightly).accepted).isFalse()
+        assertThat(f.snapshot.isActive).isFalse()
+        f.engine.close()
+    }
+
     @Test
     fun testUsesRealDeadlineAndFiveSecondFadeWithoutChangingLastDuration() = runTest {
         val f = fixture()

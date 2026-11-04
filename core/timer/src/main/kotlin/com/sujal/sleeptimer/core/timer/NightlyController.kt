@@ -10,6 +10,8 @@ import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.Clock
 import com.sujal.sleeptimer.core.model.Diagnostics
 import com.sujal.sleeptimer.core.model.SettingsStore
+import com.sujal.sleeptimer.core.model.StartSource
+import com.sujal.sleeptimer.core.model.TimerCommand
 import com.sujal.sleeptimer.core.model.nextNightlyOccurrence
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
@@ -18,7 +20,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,7 +40,11 @@ class NightlyController @Inject constructor(
     private val mutex = Mutex()
 
     init {
-        scope.launch { settings.data.collect { reconcile() } }
+        scope.launch {
+            settings.data.map {
+                listOf(it.nightlyEnabled, fingerprint(it))
+            }.distinctUntilChanged().collect { reconcile() }
+        }
     }
 
     suspend fun reconcile(): Boolean = mutex.withLock { schedule(settings.data.first()) }
@@ -59,7 +67,7 @@ class NightlyController @Inject constructor(
         val current = settings.data.first()
         val occurrence = intent.getLongExtra(OCCURRENCE, -1)
         val identityMatches = current.nightlyEnabled && intent.getStringExtra(FINGERPRINT) == fingerprint(current)
-        val fresh = identityMatches && occurrence > 0 && abs(clock.wallTimeMillis() - occurrence) <= DELIVERY_TOLERANCE
+        val fresh = identityMatches && occurrence > 0 && clock.wallTimeMillis() - occurrence in 0..DELIVERY_TOLERANCE
         if (fresh) {
             gateway.startScheduled(current.nightlyDurationMillis, "nightly:$occurrence")
         } else {
@@ -92,6 +100,9 @@ class NightlyController @Inject constructor(
             true
         } catch (_: SecurityException) {
             diagnostics.record("nightly-exact-access-changed")
+            false
+        } catch (_: IllegalStateException) {
+            diagnostics.record("nightly-schedule-rejected")
             false
         }
     }

@@ -105,7 +105,7 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
 internal suspend fun EngineRuntime.handleCommand(command: TimerCommand): CommandResult {
     val id = command.deliveryId()
     if (id != null &&
-        (id.isBlank() || id.length > MAX_COMMAND_ID_LENGTH)
+        !validCommandId(id)
     ) {
         return CommandResult(false, "Invalid command")
     }

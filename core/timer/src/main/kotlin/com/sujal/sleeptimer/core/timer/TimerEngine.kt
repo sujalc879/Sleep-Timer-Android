@@ -146,7 +146,11 @@ internal class EngineRuntime(
         try {
             settings = settingsStore.data.first().takeIf { it.isValid() } ?: AppSettings()
             val saved = store.load()
-            snapshot = saved
+            snapshot = saved.copy(
+                lastTestResult = saved.lastTestResult ?: saved.lastResult?.takeIf {
+                    it.isTest && it.status != StopStatus.CANCELLED
+                },
+            )
             reconcileRestoredSnapshot()
         } catch (error: CancellationException) {
             throw error
@@ -322,6 +326,11 @@ internal suspend fun EngineRuntime.handleFinished(event: EngineEvent.Finished) {
             phase = if (event.result.status == StopStatus.CANCELLED) TimerPhase.IDLE else TimerPhase.FINISHED,
             run = null,
             lastResult = event.result,
+            lastTestResult = if (event.result.isTest && event.result.status != StopStatus.CANCELLED) {
+                event.result
+            } else {
+                snapshot.lastTestResult
+            },
             needsAlarmReconcile = false,
         ),
         durable = false,

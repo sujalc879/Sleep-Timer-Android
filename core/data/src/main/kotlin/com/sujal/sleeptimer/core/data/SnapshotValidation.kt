@@ -1,5 +1,6 @@
 package com.sujal.sleeptimer.core.data
 
+import com.sujal.sleeptimer.core.model.StopResult
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.TimerPhase
 import com.sujal.sleeptimer.core.model.TimerRun
@@ -13,7 +14,8 @@ internal object SnapshotValidation {
             snapshot.selectedDurationMillis in TimerLimits.MINUTE..TimerLimits.MAX_DURATION &&
             snapshot.acceptedCommandIds.size <= MAXIMUM_COMMAND_IDS &&
             snapshot.acceptedCommandIds.all { it.isNotBlank() && it.length <= MAXIMUM_ID_LENGTH } &&
-            hasValidRun(snapshot) && hasValidResult(snapshot)
+            hasValidRun(snapshot) && hasValidResult(snapshot) &&
+            snapshot.lastNightlyCommandId?.let { it.isNotBlank() && it.length <= MAXIMUM_ID_LENGTH } != false
 
     private fun hasValidRun(snapshot: TimerSnapshot): Boolean {
         val run = snapshot.run
@@ -26,10 +28,12 @@ internal object SnapshotValidation {
             run.endElapsed >= run.startedElapsed && run.totalDurationMillis > 0 &&
             run.deferredUntilElapsed?.let { it >= 0 } != false && run.fade?.let { isValid(it) } != false
 
-    private fun hasValidResult(snapshot: TimerSnapshot): Boolean = snapshot.lastResult?.let {
-        it.completedElapsed >= 0 && it.firstAttemptElapsed?.let { first -> first >= 0 } != false &&
-            it.detail.length <= MAXIMUM_DETAIL_LENGTH
-    } ?: true
+    private fun hasValidResult(snapshot: TimerSnapshot): Boolean =
+        snapshot.lastResult?.let(::validResult) != false && snapshot.lastTestResult?.let(::validResult) != false
+
+    private fun validResult(result: StopResult): Boolean =
+        result.completedElapsed >= 0 && result.firstAttemptElapsed?.let { it >= 0 } != false &&
+            result.detail.length <= MAXIMUM_DETAIL_LENGTH
 
     private fun isValid(record: VolumeRecord): Boolean =
         record.minimumIndex >= 0 && record.originalIndex >= record.minimumIndex &&

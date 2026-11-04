@@ -3,6 +3,7 @@ package com.sujal.sleeptimer.core.timer
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.sujal.sleeptimer.core.model.Diagnostics
 import com.sujal.sleeptimer.core.model.WakeLocks
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -12,6 +13,8 @@ import kotlinx.coroutines.withTimeout
 
 @AndroidEntryPoint
 class NightlyAlarmReceiver : BroadcastReceiver() {
+    @Inject lateinit var diagnostics: Diagnostics
+
     @Inject lateinit var controller: NightlyController
 
     @Inject lateinit var wakes: WakeLocks
@@ -21,7 +24,12 @@ class NightlyAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != NightlyController.ACTION) return
-        val lease = wakes.acquire("nightly-handoff", HANDOFF_TIMEOUT)
+        val lease = try {
+            wakes.acquire("nightly-handoff", HANDOFF_TIMEOUT)
+        } catch (_: RuntimeException) {
+            diagnostics.record("nightly-handoff-wake-failed")
+            return
+        }
         val pending = goAsync()
         scope.launch {
             try {

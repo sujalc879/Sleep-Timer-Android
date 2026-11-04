@@ -8,11 +8,13 @@ import com.sujal.sleeptimer.core.model.RuntimeCapabilities
 import com.sujal.sleeptimer.core.model.StartSource
 import com.sujal.sleeptimer.core.model.TimerCommand
 import com.sujal.sleeptimer.core.model.TimerLimits
+import com.sujal.sleeptimer.core.model.isActive
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @Singleton
@@ -50,8 +52,10 @@ class TimerGateway @Inject constructor(
 
     fun ensureForeground(): Boolean = startService(TimerServiceIntents.base(context, TimerServiceIntents.RECONCILE))
 
-    fun startScheduled(durationMillis: Long, commandId: String): Boolean {
+    suspend fun startScheduled(durationMillis: Long, commandId: String): Boolean {
         val command = TimerCommand.Start(durationMillis, StartSource.NIGHTLY, false, commandId)
+        val restored = engine.state.first { it.initialized }
+        if (restored.snapshot.isActive) return engine.send(command).accepted
         val intent = TimerServiceIntents.base(context, TimerServiceIntents.START)
             .putExtra(TimerServiceIntents.DURATION, durationMillis)
             .putExtra(TimerServiceIntents.SOURCE, StartSource.NIGHTLY.name)
