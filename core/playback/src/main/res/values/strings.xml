@@ -1,0 +1,4 @@
+<resources>
+    <string name="playback_access_label">Sleep timer playback controls</string>
+    <string name="playback_access_description">Pause active media sessions when your timer ends. Notification content is not stored.</string>
+</resources>
