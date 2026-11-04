@@ -1,5 +1,13 @@
 plugins {
-    id("sleep.android.application")
+    id("sleep.android.compose.application")
+}
+
+dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.bundles.compose)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.kotlinx.coroutines.android)
 }
 
 android {

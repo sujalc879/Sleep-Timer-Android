@@ -1,3 +1,8 @@
 <resources>
+    <string name="player_channel_text">Local playback test · no network</string>
+    <string name="player_playing">Playing</string>
+    <string name="player_paused">Paused</string>
+    <string name="silent_player">Silent output (recommended for automated tests)</string>
+    <string name="player_stop">Stop test player</string>
     <string name="testplayer_name">Sleep timer test player</string>
 </resources>
