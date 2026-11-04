@@ -84,6 +84,7 @@ class AndroidComposeLibraryConventionPlugin : Plugin<Project> {
 
 class KotlinLibraryConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) = with(target) {
+        pluginManager.apply("java-library")
         pluginManager.apply("org.jetbrains.kotlin.jvm")
         pluginManager.apply("sleep.quality")
         extensions.configure<KotlinJvmProjectExtension> { jvmToolchain(JVM_TOOLCHAIN_VERSION) }
