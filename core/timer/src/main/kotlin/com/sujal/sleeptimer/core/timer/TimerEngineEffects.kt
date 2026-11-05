@@ -175,6 +175,7 @@ internal suspend fun EngineRuntime.executeStop(runId: String, activeSettings: Ap
                 record(runId, currentToken, it)
             }
             if (result.status != StopStatus.DEFERRED) {
+                lockAfterStop(runId, activeSettings, currentToken, result)
                 events.send(EngineEvent.Finished(runId, currentToken, result))
                 return
             }

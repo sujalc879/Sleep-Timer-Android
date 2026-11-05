@@ -36,6 +36,8 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     val theme: ThemeMode = ThemeMode.SYSTEM,
     val dimWhileRunning: Boolean = true,
+    val exactAlarmRationaleShown: Boolean = false,
+    val screenOffAdminRevoked: Boolean = false,
 ) {
     fun isValid(): Boolean = schemaVersion == 1 && lastDurationMillis in TimerLimits.MINUTE..TimerLimits.MAX_DURATION &&
         fadeMillis in 0..TimerLimits.MINUTE && fadeMillis % FADE_STEP == 0L &&

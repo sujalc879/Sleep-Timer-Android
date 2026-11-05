@@ -56,6 +56,7 @@ data class TimerDependencies(
     val playback: PlaybackController,
     val diagnostics: Diagnostics,
     val recovery: RecoveryInspector = RecoveryInspector { false },
+    val screenLocker: com.sujal.sleeptimer.core.model.ScreenLocker = com.sujal.sleeptimer.core.model.ScreenLocker {},
 )
 
 class TimerEngine(dependencies: TimerDependencies, scope: CoroutineScope, initialExecutionAllowed: Boolean = true) {
@@ -128,6 +129,7 @@ internal class EngineRuntime(
     val alarms = ports.alarms
     val wakeLocks = ports.wakeLocks
     val feedback = ports.feedback
+    val screenLocker = ports.screenLocker
     val playback = ports.playback
     val diagnostics = ports.diagnostics
     val recovery = ports.recovery

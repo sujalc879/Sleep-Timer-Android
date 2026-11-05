@@ -44,6 +44,38 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimerEngineCommandTest {
+    @Test fun screenLocksAfterVerifiedStopButNeverDuringTestOrCancellation() = runTest {
+        val f = fixture(preferences = AppSettings(screenOff = true))
+        f.start(TimerLimits.MINUTE)
+        advanceTimeBy(TimerLimits.MINUTE)
+        runCurrent()
+        assertThat(f.screenLocks).containsExactly(TimerLimits.MINUTE)
+        f.send(TimerCommand.StartTest(true, "test-with-admin"))
+        advanceTimeBy(TEST_SECONDS)
+        runCurrent()
+        assertThat(f.screenLocks).hasSize(1)
+        f.start(id = "cancel-with-admin")
+        f.send(TimerCommand.Stop("cancel"))
+        assertThat(f.screenLocks).hasSize(1)
+        f.engine.close()
+    }
+
+    @Test fun resumedPlaybackAndCallsPreventScreenLock() = runTest {
+        val f = fixture(preferences = AppSettings(screenOff = true))
+        f.playback.resumesImmediately = true
+        f.start(TimerLimits.MINUTE)
+        advanceTimeBy(TimerLimits.MINUTE)
+        runCurrent()
+        assertThat(f.screenLocks).isEmpty()
+        f.playback.interruption = Interruption.CALL
+        f.start(TimerLimits.MINUTE, "call")
+        advanceTimeBy(TimerLimits.MINUTE)
+        runCurrent()
+        assertThat(f.snapshot.phase).isEqualTo(TimerPhase.DEFERRED)
+        assertThat(f.screenLocks).isEmpty()
+        f.engine.close()
+    }
+
     @Test fun lastCompletedTestSurvivesAnOrdinaryRunAndCancelledTest() = runTest {
         val f = fixture()
         f.send(TimerCommand.StartTest(true, "first-test"))
@@ -354,7 +386,7 @@ class TimerEngineSchedulingTest {
         assertThat(f.wakes.active).isGreaterThan(0)
         assertThat(f.engine.state.value.degradedReason).isEqualTo("Exact alarms off")
         val oldPlan = f.alarms.plans.last()
-        f.send(TimerCommand.SettingsChanged(AppSettings(warning = WarningMode.OFF)))
+        f.send(TimerCommand.SettingsChanged(AppSettings(warning = WarningMode.OFF, shakeToExtend = false)))
         val newPlan = f.alarms.plans.last()
         assertThat(newPlan.generation).isGreaterThan(oldPlan.generation)
         assertThat(newPlan.finalWindowElapsed).isEqualTo(newPlan.endElapsed - NO_WARNING_WINDOW)
@@ -454,6 +486,7 @@ private fun TestScope.fixture(
     executionAllowed: Boolean = true,
     loadFailure: Boolean = false,
     forceStopped: Boolean = false,
+    preferences: AppSettings = AppSettings(),
 ): Fixture {
     val clock = FakeClock(testScheduler, boot, initialElapsed)
     val store = MemorySnapshots(saved, loadFailure)
@@ -461,18 +494,20 @@ private fun TestScope.fixture(
     val wakes = FakeWakes()
     val feedback = FakeFeedback(interactive)
     val playback = FakePlayback(clock, store)
+    val screenLocks = mutableListOf<Long>()
     val engine = TimerEngine(
         TimerDependencies(
-            clock, store, MemorySettings(), alarms, wakes, feedback, playback,
+            clock, store, MemorySettings(preferences), alarms, wakes, feedback, playback,
             Diagnostics {
             },
             RecoveryInspector { forceStopped },
+            com.sujal.sleeptimer.core.model.ScreenLocker { screenLocks.add(clock.elapsedRealtime()) },
         ),
         backgroundScope,
         initialExecutionAllowed = executionAllowed,
     )
     runCurrent()
-    return Fixture(this, engine, clock, store, alarms, wakes, feedback, playback)
+    return Fixture(this, engine, clock, store, alarms, wakes, feedback, playback, screenLocks)
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -486,6 +521,7 @@ private class Fixture(
     val wakes: FakeWakes,
     val feedback: FakeFeedback,
     val playback: FakePlayback,
+    val screenLocks: MutableList<Long>,
 ) {
     val snapshot: TimerSnapshot get() = engine.state.value.snapshot
     suspend fun send(command: TimerCommand): com.sujal.sleeptimer.core.model.CommandResult {
@@ -518,8 +554,8 @@ private class MemorySnapshots(var value: TimerSnapshot, private val failLoad: Bo
     }
 }
 
-private class MemorySettings : SettingsStore {
-    override val data = MutableStateFlow(AppSettings())
+private class MemorySettings(initial: AppSettings = AppSettings()) : SettingsStore {
+    override val data = MutableStateFlow(initial)
     override suspend fun update(transform: (AppSettings) -> AppSettings): AppSettings {
         data.value = transform(data.value)
         return data.value
@@ -565,12 +601,14 @@ private class FakeFeedback(private val interactive: Boolean) : TimerFeedback {
 
 private class FakePlayback(private val clock: Clock, private val store: MemorySnapshots) : PlaybackController {
     var interruption = Interruption.NONE
+    var playing = true
+    var resumesImmediately = false
     var fadeBlock: CompletableDeferred<Unit>? = null
     val fadeStartedAt = mutableListOf<Long>()
     val stopTimes = mutableListOf<Long>()
     val recoverAllowPlaying = mutableListOf<Boolean>()
     var volumeWrites = 0
-    override suspend fun observe(): PlaybackObservation = PlaybackObservation(true, interruption = interruption)
+    override suspend fun observe(): PlaybackObservation = PlaybackObservation(playing, interruption = interruption)
     override suspend fun fade(
         run: TimerRun,
         settings: AppSettings,
@@ -598,6 +636,7 @@ private class FakePlayback(private val clock: Clock, private val store: MemorySn
             return StopResult(StopStatus.DEFERRED)
         }
         stopTimes.add(clock.elapsedRealtime())
+        playing = resumesImmediately
         return StopResult(StopStatus.STOPPED, StopMethod.MEDIA_KEY, clock.elapsedRealtime(), isTest = run.isTest)
     }
     override suspend fun recoverFade(record: VolumeRecord, token: EffectToken, allowWhilePlaying: Boolean): Boolean {

@@ -1,0 +1,12 @@
+<resources>
+    <string name="screen_admin_label">Sleep timer screen lock</string>
+    <string name="screen_admin_description">Lock your screen after playback stops. Deactivate this administrator before uninstalling Sleep timer.</string>
+    <string name="battery_samsung">In Battery → Background usage limits, remove Sleep timer from Sleeping and Deep sleeping apps, and add it to Never auto sleeping apps.</string>
+    <string name="battery_xiaomi">Enable Autostart for Sleep timer, choose No restrictions under Battery saver, and lock it in Recents if your phone offers that option.</string>
+    <string name="battery_oneplus">Allow background activity and Auto-launch for Sleep timer. Disable sleep standby optimization if timers are delayed.</string>
+    <string name="battery_oppo">Allow Auto-launch and background activity for Sleep timer in App battery management. Lock the app in Recents if offered.</string>
+    <string name="battery_vivo">Allow background power usage and Autostart for Sleep timer in iManager.</string>
+    <string name="battery_huawei">In App launch, manage Sleep timer manually and allow Auto-launch, Secondary launch and Run in background.</string>
+    <string name="battery_motorola">In App info → App battery usage, allow background usage and select Unrestricted if available. Check Battery saver if a test is delayed.</string>
+    <string name="battery_generic">In App info → Battery, allow background usage and choose Unrestricted. Menu names vary by device and Android version.</string>
+</resources>

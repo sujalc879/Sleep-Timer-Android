@@ -43,6 +43,10 @@ interface TimerFeedback {
     fun isInteractive(): Boolean
 }
 
+fun interface ScreenLocker {
+    fun lockIfSafe()
+}
+
 fun interface Diagnostics {
     fun record(event: String)
 }

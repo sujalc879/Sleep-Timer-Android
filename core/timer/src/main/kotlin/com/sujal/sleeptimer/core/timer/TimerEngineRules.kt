@@ -61,7 +61,8 @@ internal val TimerSnapshot.isCancelling: Boolean
 internal fun finalWindow(run: TimerRun, settings: AppSettings): Long {
     val warning = if (warningEnabled(run, settings)) TimerLimits.MINUTE else 0
     val fade = settings.fadeMillis.coerceAtMost(if (run.isTest) TEST_FADE_CAP else run.totalDurationMillis)
-    return run.endElapsed - maxOf(warning, fade) - FINAL_SAFETY
+    val shake = if (settings.shakeToExtend && !run.isTest) com.sujal.sleeptimer.core.system.SHAKE_FINAL_WINDOW else 0
+    return run.endElapsed - maxOf(warning, fade, shake) - FINAL_SAFETY
 }
 
 internal fun warningEnabled(run: TimerRun, settings: AppSettings): Boolean =

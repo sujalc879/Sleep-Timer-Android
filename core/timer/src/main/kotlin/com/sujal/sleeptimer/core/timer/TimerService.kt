@@ -41,6 +41,16 @@ class TimerService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val pending = AtomicInteger()
     private val instanceId = UUID.randomUUID().toString()
+
+    @Inject lateinit var settingsStore: com.sujal.sleeptimer.core.model.SettingsStore
+
+    @Inject lateinit var clock: com.sujal.sleeptimer.core.model.Clock
+
+    @Inject lateinit var wakes: com.sujal.sleeptimer.core.model.WakeLocks
+
+    @Inject lateinit var feedback: com.sujal.sleeptimer.core.model.TimerFeedback
+    private lateinit var sensors: com.sujal.sleeptimer.core.system.TimerSensorController
+    private var preferences = com.sujal.sleeptimer.core.model.AppSettings()
     private var receivedCommand = false
     private var lastPresentation = ""
     private var reportedResult: Any? = null
@@ -49,6 +59,28 @@ class TimerService : Service() {
         super.onCreate()
         capabilities.foregroundServiceHasWhileInUse = false
         reportedResult = engine.state.value.snapshot.lastResult
+        sensors =
+            com.sujal.sleeptimer.core.system.TimerSensorController(this, clock, wakes, capabilities, diagnostics) {
+                    id,
+                    delta,
+                ->
+                serviceScope.launch {
+                    val result = engine.send(TimerCommand.Extend(delta, UUID.randomUUID().toString(), id))
+                    if (result.accepted) feedback.warning(com.sujal.sleeptimer.core.model.WarningMode.SOFT)
+                }
+            }
+        serviceScope.launch {
+            settingsStore.data.collect {
+                preferences = it
+                updateSensors()
+            }
+        }
+        serviceScope.launch {
+            while (isActive) {
+                updateSensors()
+                delay(TimerLimits.SECOND)
+            }
+        }
         observeState()
         serviceScope.launch {
             while (isActive) {
@@ -111,13 +143,27 @@ class TimerService : Service() {
         val fromVisibleStart =
             command is TimerCommand.Start && command.source == StartSource.ACTIVITY && command.hasWhileInUse
         val fromVisibleTest = command is TimerCommand.StartTest && command.hasWhileInUse
-        if (fromVisibleStart || fromVisibleTest) capabilities.foregroundServiceHasWhileInUse = true
+        if (capabilities.activityVisible || fromVisibleStart ||
+            fromVisibleTest
+        ) {
+            capabilities.foregroundServiceHasWhileInUse = true
+        }
+    }
+
+    private fun updateSensors() {
+        val state = engine.state.value.snapshot
+        val run = state.run.takeIf {
+            state.phase == com.sujal.sleeptimer.core.model.TimerPhase.RUNNING ||
+                state.phase == com.sujal.sleeptimer.core.model.TimerPhase.FADING
+        }
+        sensors.update(run, preferences)
     }
 
     private fun observeState() {
         serviceScope.launch {
             engine.state.collect { state ->
                 if (!state.initialized || !capabilities.foregroundServiceActive) return@collect
+                updateSensors()
                 val snapshot = state.snapshot
                 val run = snapshot.run
                 val presentation = "${run?.id}:${snapshot.phase}:${run?.endElapsed}:${state.degradedReason}"
@@ -148,6 +194,7 @@ class TimerService : Service() {
     override fun onDestroy() {
         capabilities.foregroundServiceActive = false
         capabilities.foregroundServiceHasWhileInUse = false
+        sensors.close()
         serviceScope.cancel()
         // Enqueue before a replacement service can promote on the main thread.
         appScope.launch(start = CoroutineStart.UNDISPATCHED) {

@@ -124,6 +124,7 @@ object PlaybackRuntimeModule {
         TimerDependencies(
             clock, snapshots, settings, alarms, wakes, feedback, playback, diagnostics,
             AndroidRecoveryInspector(context, diagnostics),
+            com.sujal.sleeptimer.core.system.AndroidScreenLocker(context, diagnostics),
         ),
         scope,
         initialExecutionAllowed = false,
