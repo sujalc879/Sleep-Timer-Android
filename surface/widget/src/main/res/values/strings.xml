@@ -1,0 +1,7 @@
+<resources>
+    <string name="widget_label">Sleep timer</string>
+    <string name="widget_description">Start your last sleep timer or view the running countdown.</string>
+    <string name="widget_start">Tap to start</string>
+    <string name="widget_running">Running</string>
+    <string name="widget_chronometer">Remaining time</string>
+</resources>

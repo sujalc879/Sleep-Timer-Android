@@ -6,8 +6,10 @@ import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
 class SleepTimerApplication : Application() {
+    @javax.inject.Inject lateinit var surfaces: SurfaceSync
     override fun onCreate() {
         super.onCreate()
+        surfaces.start()
         if (BuildConfig.DEBUG) {
             StrictMode.enableDefaults()
         }
