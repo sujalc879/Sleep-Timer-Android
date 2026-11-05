@@ -244,3 +244,39 @@ Sources: [pinned Material sources](https://dl.google.com/dl/android/maven2/andro
 Nightly requires exact-alarm access; its sheet explains that access before enabling the schedule. It starts without WIU and retains the conservative Android 17 audio limits. Device delivery remains unverified. Snapshot schema 1 gains optional fields for the nightly identity and last completed test result. Recover the previous test-result format when present, keep test evidence across normal runs/cancelled tests, and retain the settings-only backup policy.
 
 Sources: [LocalDateTime zone resolution](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/LocalDateTime.html#atZone(java.time.ZoneId)), [Compose semantics](https://developer.android.com/develop/ui/compose/accessibility/semantics), [shared bounds](https://developer.android.com/develop/ui/compose/animation/shared-elements).
+
+## D036 — Settings, consent and feature ownership
+
+**Accepted (Phase 3).** Settings writes the existing validated store, then commands engine reconciliation. Reuse the real Home Nightly and test flows rather than create a second runtime. Keep expressive component opt-ins in the design system. Add tile and a functional pin-capable dial widget as dependencies of the Settings Add actions; defer their full Phase 4 presentation and additional surfaces.
+
+Device admin declares only force-lock, is opt-in through Android, and is removable from Settings. Lock only following a successful/quiet non-test pipeline under its current effect token, after volume recovery and with a fresh call/interactive check. External revocation disables the preference and is surfaced to the user.
+
+Sources: [DevicePolicyManager](https://developer.android.com/reference/android/app/admin/DevicePolicyManager), [sensor background restrictions](https://developer.android.com/develop/sensors-and-location/sensors/sensors_overview), [wake-up accelerometer](https://developer.android.com/reference/android/hardware/SensorManager), [application night mode](https://developer.android.com/reference/android/app/UiModeManager), [window brightness](https://developer.android.com/reference/android/view/WindowManager.LayoutParams).
+
+## D037 — Honest shake capability and appearance startup
+
+**Accepted.** Register only during a running FGS. Prefer a wake-up accelerometer; with an ordinary accelerometer, monitor while interactive or during the last five minutes, with a timed partial wake lease in that final interval. Re-evaluate on screen and engine/settings changes and clean up synchronously on service destruction. The detector uses three alternating, gravity-filtered peaks, a 1.2-second window and a three-second cooldown. Synthetic tests are not evidence of real-device false-positive tuning.
+
+Hold the splash until settings and snapshot initialization, apply minimum window brightness before drawing an active Home, and restore the original override when leaving it. Use application night mode on API 31+ and Compose theme selection below. Window brightness never keeps the screen on and never changes the global brightness setting.
+
+## D038 — Follow-system night mode and supporting surfaces
+
+**Verified November 5.** Although UiModeManager's general AUTO documentation describes twilight, AOSP's per-application `setApplicationNightMode` maps AUTO/CUSTOM to `UI_MODE_NIGHT_UNDEFINED`, clearing the app override. Use AUTO for System; do not map System to the current app-local YES/NO state, which would pin it. API 31+ persists this through Android, while older releases apply the selected Compose theme. The initial pre-31 resource-theme policy was superseded by the night-safe starting surface in D040; physical cold-start visual checks remain pending.
+
+The pinned Glance 1.2.0 source confirms `material3.ColorProviders(light, dark)` and `AndroidRemoteViews`. Apply the app's generated/dynamic schemes and forced theme to widgets, including their native chronometer text. Push state changes and minute refreshes; the chronometer counts down in the host. The Phase 3 pin target is functional but its dial ring, responsive previews and the presets widget remain Phase 4 work. The tile starts without assuming WIU; Android 17 behavior remains a device gate.
+
+Sources: [AOSP UiModeManagerService](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/core/java/com/android/server/UiModeManagerService.java), [Glance themes](https://developer.android.com/develop/ui/compose/glance/theme), [pinning widgets](https://developer.android.com/develop/ui/views/appwidgets/discoverability).
+
+Glance's transitive WorkManager manifest contributes ACCESS_NETWORK_STATE, observed in the final debug APK. This is internal widget infrastructure; the app declares no INTERNET permission and does not use WorkManager for timer deadlines. The existing debug-only LeakCanary storage permissions remain debug-only. No device permission was granted by this task.
+
+## D039 — November 5 catalog refresh
+
+**Accepted.** The required GradleDependency lint detected newly available official artifacts while Phase 3 continued across the date boundary. Pin Material 3 **1.5.0-rc01**, Navigation 3 **1.2.1** and UI Automator **2.4.1**, preserving the explicit Material 3 1.5-line exception. Verify compilation, navigation and screenshot regressions after this change; do not suppress the dependency lint or silently rewrite visual baselines. These are project dependency updates, not SDK/JDK installations.
+
+Sources: [Material 3 releases](https://developer.android.com/jetpack/androidx/releases/compose-material3), [Navigation 3 releases](https://developer.android.com/jetpack/androidx/releases/navigation3), [UI Automator releases](https://developer.android.com/jetpack/androidx/releases/test-uiautomator).
+
+## D040 — Night-safe legacy splash and fresh test evidence
+
+**Accepted.** On API 26–30 Android cannot persist the app night-mode override through UiModeManager. Use the generated dark surface for the starting window in both system modes; hold it until settings/snapshot readiness and the selected Compose theme can draw. This avoids a light starting flash for explicit Dark when the system is Light. A Light selection transitions from that dark starting surface to its intended light screen. API 31+ retains the matching system/application-mode launch resources. Physical cold-start visual checks remain pending.
+
+A new 10-second request captures the engine's current completion stamp before service delivery. Its visible result observer ignores that older result until a new completion arrives. Recomposition while a previous test is still stored must never be presented as a new successful player check. A regression drives old result → new running state → new completion through the actual Compose observer.

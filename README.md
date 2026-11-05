@@ -4,7 +4,7 @@ Native Android sleep timer, built with Kotlin and Material 3 Expressive. The bui
 
 ## Current scope
 
-Foundation provides the dynamic/fallback theme, system splash and icons, edge-to-edge Home/Settings navigation, module boundaries and build checks. The screens intentionally contain only their real app bars at this phase. Playback control and timer controls start in later phases; this build cannot stop a player yet.
+Phases 0–3 provide the timer engine/service, guarded playback stopping and volume handling, adaptive Home controls, complete Settings and permission flows, shake extension, optional screen locking and dimming. A supporting tile and countdown widget make the Settings Add actions functional; full system surfaces are Phase 4. Host checks pass, while physical playback/Doze, sensor, DND and OEM reliability gates remain pending. This is a development build.
 
 See [docs/PROGRESS.md](docs/PROGRESS.md) for observed validation results and pending runtime checks, [docs/PLAN.md](docs/PLAN.md) for the phase sequence, and [docs/DECISIONS.md](docs/DECISIONS.md) for engineering choices.
 
@@ -34,7 +34,7 @@ Use `./gradlew formatAll` to format all modules and build logic. Stable detekt r
 
 Host navigation tests run on Robolectric APIs 26 and 35 with JDK 17. Robolectric API 37 requires JDK 21; no additional JDK is installed automatically. Host tests do not replace emulator/device smoke tests.
 
-## Foundation device smoke test
+## Phone testing
 
 After a successful debug build, install on an emulator or a connected phone:
 
@@ -42,6 +42,8 @@ After a successful debug build, install on an emulator or a connected phone:
 ./gradlew :app:installDebug
 ```
 
-Open **Sleep timer**, tap the tune action to open **Settings**, and return using the Back arrow and system Back. Rotate on each screen, repeat with the largest font setting and both system light/dark themes, then cold-launch in dark mode to inspect splash continuity. Android 12+ uses wallpaper colors. Android 8–11 uses the generated fallback palette. Check gesture and three-button navigation insets where available.
+See [Phase 3 test steps](docs/PHASE3_TESTING.md) for all controls and consent flows. For a quick check, play media, open **Sleep timer** → **Settings** → **Run a 10-second test**. The Stop control cancels the timer and leaves playback running; expiry uses the stop pipeline.
+
+For navigation/appearance, tap the tune action to open **Settings**, and return using the Back arrow and system Back. Rotate on each screen, repeat with the largest font setting and both system light/dark themes, then cold-launch in dark mode to inspect splash continuity. Android 12+ uses wallpaper colors. Android 8–11 uses the generated fallback palette. Check gesture and three-button navigation insets where available.
 
 The development package is `com.sujal.sleeptimer.debug`; its APK is `app/build/outputs/apk/debug/app-debug.apk`. Production package identity and signing remain release inputs. No device connection is needed for the host build. No emulator, SDK, JDK or device installation is performed automatically by the project.

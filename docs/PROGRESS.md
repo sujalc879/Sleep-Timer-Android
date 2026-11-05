@@ -1,14 +1,46 @@
 # Progress
 
-Last updated: 2026-11-04 (Asia/Kolkata).
+Last updated: 2026-11-05 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 2 Home UI is implemented and host verification passes. Stop before Phase 3 Settings and features.** The owner authorized this phase after the Reliability core. Stop still cancels the timer and leaves playback running.
+**Phase 3 Settings and features is implemented and host verification passes. Stop before Phase 4 system surfaces.** Stop still cancels the timer and leaves playback running. Physical-device exit gates remain pending; this is not a production-readiness claim.
 
-The Moto g54 5G connected during this task. The final verified Phase 2 debug APK installed successfully after confirming the timer was idle and opened with `Status: ok` (WARM, 1511 ms, not a benchmark). Idle Home/dynamic colors were visually inspected during this task. This is not a Spotify/Doze or physical TalkBack pass. The Phase 1 physical-device exit gate remains pending.
+ADB started successfully but reported **no connected devices** during Phase 3. No phone installation, screen locking, playback stop, physical shake, DND or overnight timing result is claimed for this phase. The Moto g54 5G / Android 15 installed and opened the prior Phase 2 APK; that historical result does not validate this new APK.
 
-See [PHASE2_TESTING.md](PHASE2_TESTING.md) for the current Home test steps and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/recovery timing procedures.
+See [PHASE3_TESTING.md](PHASE3_TESTING.md) for installation and every Settings/permission/sensor test, [PHASE2_TESTING.md](PHASE2_TESTING.md) for Home controls, and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/Doze/recovery procedures.
+
+## Implemented in Phase 3
+
+- Complete grouped Settings cards: fade slider, restore, extension/warning pickers, Nightly configuration, real tile/widget Add actions, dynamic color, Light/Dark/System, dimming, playback test and reliability guidance. Preferences use atomic DataStore transforms; the existing engine observes settings changes.
+- Optional force-lock-only device admin, explicit biometric/PIN disclosure, Android activation, deactivation/uninstall path and external-revocation readiness. Locking follows a successful/quiet stop pipeline with a fresh playback/call check and effect-token guard; tests and cancellation never lock.
+- Foreground-service-owned accelerometer registration, gravity-filtered alternating-peak detector, cooldown, accepted-command confirmation haptics, bounded ordinary-sensor final-window wake leases, registration-failure cleanup and service-destruction cleanup. The final alarm opens a five-minute shake window when shake is enabled; the ordinary-sensor screen-off trade-off is documented. Recorded real-device trace tuning is still pending.
+- Application night-mode persistence on API 31+, dynamic/fallback application and widget schemes, minimum window brightness for visible running Home, and restoration on leaving. Legacy starting windows use the generated dark surface until preferences and the initial snapshot are ready; API 31+ keeps its matching launch scheme.
+- Contextual notification then exact-alarm prompts after the timer starts, a remembered exact-alarm rationale, actual access refresh, counted critical readiness issues, optional media-session disclosure and manufacturer battery instructions/browser guides.
+- Reused real 10-second test/Nightly flows from Settings, plus a completion-stamp guard that prevents an older stored test from appearing as the result of a new request.
+- Supporting real QS tile and pin-capable Glance countdown widget so Settings has no inert Add row. State/minute refreshes and native host countdowns are connected. Full dial ring/responsiveness/previews, the presets widget, promoted notifications and shortcuts remain Phase 4.
+- Material 3 **1.5.0-rc01**, Navigation 3 **1.2.1**, UI Automator **2.4.1** verified against Google's Maven metadata/POMs on November 5. No SDK/JDK/emulator/global CLI installation occurred.
+
+## Current verification — Phase 3
+
+Commands use the existing JDK 17 through command-local JAVA_HOME.
+
+| Check | Observed result |
+|---|---|
+| `./gradlew formatAll --console=plain` | **PASS** |
+| `./gradlew assembleDebug testDebugUnitTest lintDebug spotlessCheck detekt :feature:home:verifyRoborazziDebug :feature:settings:verifyRoborazziDebug --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 19 s; 931 tasks, 140 executed / 791 up-to-date |
+| All host test XML, including pure-model JVM tests | **174 passed**, zero failures/errors/skips |
+| Screenshot comparisons | **5 passed**: existing 3 Home baselines plus visually reviewed Settings dark/light at 390 dp |
+| New coverage | Settings interaction 4 + screenshots 2; synthetic shake 4; sensor lifecycle/failure 2; screen-lock engine safeguards 2; tile permission/membership 4; widget metadata 2; window brightness 2; legacy splash 1; new-test freshness 1 |
+| Final APK permission inspection | No INTERNET, USE_EXACT_ALARM, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or AccessibilityService; force-lock-only admin metadata |
+| SDK local path | local.properties remains ignored and untracked |
+| `adb devices -l` | **No connected devices**; no Phase 3 installation attempted |
+
+The two Settings images were reviewed against design/03-settings.png. These and the Home images are implementation regression baselines, not a claim of pixel-identical mockup matching. The dependency refresh passed existing Home/Settings image comparisons without rewriting the baselines. Test-only legacy Robolectric/Compose helper deprecation warnings remain; Gradle reports future Gradle 10 deprecations. No lint baseline or global analyzer threshold relaxation was added.
+
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`. Glance's WorkManager dependency contributes normal ACCESS_NETWORK_STATE for its internal widget infrastructure; it adds no INTERNET permission. Timer deadlines still use the engine/alarm/service path. LeakCanary's legacy storage permissions remain debug-only; no storage permission was requested or granted.
+
+Phase 3 source commits: `ade51e5` dependency pins; `da8148e` sensor/screen-lock runtime; `e719d7d` supporting surfaces; `0cd9cbb` Settings, appearance, permission flows and UI regressions. Prior owner and phase commits are preserved.
 
 ## Implemented in Phase 2
 
@@ -22,7 +54,7 @@ See [PHASE2_TESTING.md](PHASE2_TESTING.md) for the current Home test steps and [
 - Actual capability gates hide the shake card and screen-lock pipeline step until their runtime features exist. No inert enable switch or fake active sensor is exposed.
 - Three visually reviewed native screenshot baselines and new interaction, formatting, drag, DST, persistence and occurrence regressions.
 
-## Current verification
+## Historical Phase 2 verification
 
 | Check | Observed result |
 |---|---|
@@ -76,7 +108,7 @@ Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.d
 - Foreground startup denial, exact-alarm revocation, sticky restart, real process death, reboot/update, force-stop, low memory, restricted bucket, OEM survival, long runs and actual wake-lock/battery behavior need runtime tests. Host tests cover the reducer and adapters only. `am kill` can leave an FGS process alive and is not automatically process-death evidence.
 - Android 15 force-stop inspection uses the current PID's startup history. Older versions lack that unambiguous flag; detection is incomplete there. Interrupted results are persisted; their complete in-app explanation belongs to the later UI/reliability flows.
 - A call/alarm deferral can hold a bounded two-hour wake lease with polling. Battery cost and callback refinement need hardening measurements. DND/Bedtime vibration behavior remains unverified on a device.
-- Home controls, Custom/Nightly, basic readiness and visible test results now work. Complete Settings, shake monitoring, screen locking, dimming, OEM guidance and fuller permission flows remain Phase 3. The Settings destination still contains only its app bar. Nightly background delivery and physical accessibility remain unverified.
+- Home and complete Settings are implemented. Nightly background delivery, physical accessibility, screen-lock consent/work profiles, ordinary/wake-up sensor delivery and real shake false positives remain unverified. Vibration mode behavior and brightness/cold-start continuity need device checks. The shake-enabled final alarm currently uses the conservative five-minute window even on devices with a wake-up sensor or no accelerometer; battery optimization of that policy remains hardening work.
 - Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
 - Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation and a Phase 2 APK opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
 - Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
@@ -118,4 +150,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Use the connected phone to collect Phase 1 runtime evidence and resolve any failures. The next implementation phase is **Phase 3 Settings and features**, requiring the owner's next continuation. Do not silently claim the pending runtime gates passed.
+Connect the phone and follow PHASE3_TESTING.md, then collect the pending Phase 1 Spotify/Doze evidence. The next implementation phase is **Phase 4 System surfaces**, after the owner's next continuation. Do not silently claim physical gates passed.

@@ -4,7 +4,7 @@ Planning date: 2026-11-03 (Asia/Kolkata).
 
 ## Scope and current gate
 
-The owner authorized **Phase 2 Home UI** after the Reliability core host checks. This task stops before the complete Settings/features phase. Physical-device reliability evidence remains pending. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
+The owner authorized **Phase 3 Settings and features**, now implemented and host-verified. Stop before Phase 4 system surfaces. Physical-device reliability evidence remains pending. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
 
 The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../design) visually inspected. The PDF duplicates those references. The product priority is reliable playback stopping, followed by safe volume handling, platform-native presentation, accessibility, and low battery use. A disconnected phone does not block implementation; unavailable runtime tests are reported as skipped.
 
@@ -163,9 +163,15 @@ Physical shake traces, overnight timing, OEM survival, hearing-safety/Bluetooth 
 
 The Stop-button product choice is resolved: cancel the timer and keep playback running. No further product answer is required for Reliability core. Publisher identity, production application ID and signing details must be settled before release configuration; do not invent production credentials or IDs.
 
-Phase 2 Home implementation and host checks are complete. Stop before Phase 3. PROGRESS, PHASE1_TESTING and PHASE2_TESTING retain the pending runtime evidence and exact phone commands.
+Phase 2 Home implementation and host checks are complete. The owner authorized Phase 3 on November 4. PROGRESS, PHASE1_TESTING and PHASE2_TESTING retain the pending runtime evidence and exact phone commands.
 
 
 ## Phase 2 execution
 
 Add idle/running/finished Home, keyboard/TalkBack dial, connected presets, Custom/Nightly sheets, real engine commands and adaptive Expressive motion. Nightly requires a functional scheduler to avoid an inert switch; include that supporting dependency with its sheet. Complete Settings, shake and screen locking remain Phase 3. Render the shake card only while monitoring is actually active. Preserve the pending phone/Doze gates.
+
+## Phase 3 execution (authorized November 4)
+
+Build the complete segmented Settings list and real persistence, permission explanations, warning/extend pickers, existing Nightly/test entry points, appearance and window brightness. Add a force-lock-only device administrator behind explicit system consent, and invoke it after the real stop/restore pipeline with run-generation, call and test guards. Own accelerometer registration and bounded fallback wake leases in the foreground service; keep sensor samples local and test alternating-peak rejection, cooldown and lifecycle policy. Synthetic traces establish algorithm behavior; physical trace tuning remains an explicit device gate.
+
+The tile/widget Add rows require real components. Include a functioning tile and pin-capable dial widget as supporting dependencies now; full surfaces, presets widget, promotion, previews and shortcuts remain Phase 4. Keep no inert Add actions. Check Android APIs against official documentation and pinned library sources. Verify settings interactions, persistence, policy and engine safeguards, then run all required host checks and existing screenshot comparisons. Do not claim pending Spotify/Doze, physical sensor, admin/PIN, DND or Android 17 gates passed.
