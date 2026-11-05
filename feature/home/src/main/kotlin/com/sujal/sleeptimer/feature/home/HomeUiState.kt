@@ -29,7 +29,12 @@ data class HomeUiState(
 ) {
     val running: Boolean get() = runId != null
     val displayMillis: Long get() = if (running) remainingMillis else durationMillis
-    val needsAttention: Boolean get() = !exactAlarmsAllowed || degradedReason != null
+    val criticalCount: Int get() = listOf(
+        !exactAlarmsAllowed,
+        degradedReason != null && exactAlarmsAllowed,
+        settings.screenOffAdminRevoked,
+    ).count { it }
+    val needsAttention: Boolean get() = criticalCount > 0
 }
 
 internal fun countdown(millis: Long, locale: Locale): String {

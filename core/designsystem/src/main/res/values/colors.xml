@@ -5,4 +5,6 @@
     <color name="sleeptimer_primary">#645789</color>
     <color name="sleeptimer_primary_container">#D1C1FA</color>
     <color name="sleeptimer_on_primary_container">#473A6A</color>
+    <!-- Generated dark surface, also used for the pre-31 night-safe starting window. -->
+    <color name="sleeptimer_safe_splash_surface">#0F0D12</color>
 </resources>

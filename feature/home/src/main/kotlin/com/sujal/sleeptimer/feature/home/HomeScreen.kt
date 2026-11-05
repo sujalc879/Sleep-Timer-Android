@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -115,7 +116,15 @@ private fun StatusChips(state: HomeUiState, actions: HomeActions) {
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AssistChip(
             onClick = actions.onReadiness,
-            label = { Text(stringResource(if (state.needsAttention) R.string.needs_fix else R.string.ready)) },
+            label = {
+                Text(
+                    if (state.needsAttention) {
+                        pluralStringResource(R.plurals.needs_fix, state.criticalCount, state.criticalCount)
+                    } else {
+                        stringResource(R.string.ready)
+                    },
+                )
+            },
             leadingIcon = {
                 SleepTimerIcon(
                     if (state.needsAttention) SleepTimerSymbol.WARNING else SleepTimerSymbol.CHECK,

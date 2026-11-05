@@ -4,7 +4,7 @@
     <string name="test_method_focus">Stopped using audio focus.</string>
     <string name="test_method_key">Stopped using the media pause command.</string>
     <string name="ready">Ready to stop playback</string>
-    <string name="needs_fix">1 thing to fix</string>
+    <plurals name="needs_fix"><item quantity="one">%d thing to fix</item><item quantity="other">%d things to fix</item></plurals>
     <string name="test">10 s test</string>
     <string name="custom">Custom</string>
     <string name="nightly">Nightly</string>
@@ -48,7 +48,6 @@
     <string name="nightly_access_help">For reliable nightly stops, enable notification access so Sleep timer can pause your media sessions directly.</string>
     <string name="exact_title">Allow alarms and reminders</string>
     <string name="exact_help">Nightly starts need Alarms &amp; reminders access. Timers you start yourself still work without it, using more battery.</string>
-    <string name="open_settings">Open settings</string>
     <string name="readiness_title">Ready to stop playback</string>
     <string name="exact_alarms">Exact alarms</string>
     <string name="notifications">Notifications</string>
@@ -74,4 +73,18 @@
     <string name="system_settings_unavailable">These system settings are not available on this device.</string>
     <plurals name="spoken_minutes"><item quantity="one">%d minute</item><item quantity="other">%d minutes</item></plurals>
 
+    <string name="exact_rationale_title">Keep the timer on time</string>
+    <string name="exact_rationale">Allow exact alarms so Android can wake Sleep timer near the end. Your timer is already running. Without access, Sleep timer holds a partial wake lock for the run, which uses more battery.</string>
+    <string name="exact_open">Allow exact alarms</string>
+    <string name="exact_later">Keep running</string>
+    <string name="admin_revoked">Screen-lock access removed</string>
+    <string name="admin_revoked_help">Screen locking is off. Open Settings to enable it again.</string>
+    <string name="session_rationale">Optional notification access lets Sleep timer pause active media sessions directly, including supported cast players. It does not read or store notification content. Playback can still stop without it, but some players may ignore audio focus or pause keys.</string>
+    <string name="battery_rationale">Allow background usage and choose Unrestricted for Sleep timer in Android settings.
+
+%1$s</string>
+    <string name="open_settings">Open settings</string>
+    <string name="manufacturer_guide">Manufacturer guide</string>
+    <string name="runtime_attention">Timer needs attention</string>
+    <string name="runtime_attention_help">Open the app to keep the timer service running.</string>
 </resources>

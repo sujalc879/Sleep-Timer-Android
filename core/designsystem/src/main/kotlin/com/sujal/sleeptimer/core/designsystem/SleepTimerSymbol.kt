@@ -7,6 +7,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 
 enum class SleepTimerSymbol(internal val drawable: Int) {
+    VOLUME_DOWN(R.drawable.ic_volume_down),
+    VOLUME_UP(R.drawable.ic_volume_up),
+    PHONE(R.drawable.ic_smartphone),
+    ADD(R.drawable.ic_add),
+    NOTIFICATIONS(R.drawable.ic_notifications),
+    WIDGETS(R.drawable.ic_widgets),
+    PALETTE(R.drawable.ic_palette),
+    CONTRAST(R.drawable.ic_contrast),
+    BATTERY(R.drawable.ic_battery_full),
+    CHEVRON(R.drawable.ic_chevron_right),
     PLAY(R.drawable.ic_play_arrow),
     STOP(R.drawable.ic_stop),
     CLOCK(R.drawable.ic_schedule),

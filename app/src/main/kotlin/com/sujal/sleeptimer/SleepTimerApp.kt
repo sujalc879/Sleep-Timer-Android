@@ -5,13 +5,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.sujal.sleeptimer.core.designsystem.SleepTimerTheme
-import com.sujal.sleeptimer.feature.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -23,11 +23,14 @@ internal data object Settings : NavKey
 @Composable
 fun SleepTimerApp(
     homeContent: @Composable (onSettings: () -> Unit) -> Unit,
+    settingsContent: @Composable (onBack: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
+    onHomeVisible: (Boolean) -> Unit = {},
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
 ) {
     val backStack = rememberNavBackStack(Home)
+    SideEffect { onHomeVisible(backStack.lastOrNull() == Home) }
     val navigateBack: () -> Unit = {
         if (backStack.size > 1) {
             backStack.removeLastOrNull()
@@ -44,7 +47,7 @@ fun SleepTimerApp(
                             if (backStack.lastOrNull() != Settings) backStack.add(Settings)
                         }
                     }
-                    entry<Settings> { SettingsScreen(onBackClick = navigateBack) }
+                    entry<Settings> { settingsContent(navigateBack) }
                 },
             )
         }

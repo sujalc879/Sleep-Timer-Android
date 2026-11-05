@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sujal.sleeptimer.core.model.PlaybackController
 import com.sujal.sleeptimer.core.model.RuntimeCapabilities
 import com.sujal.sleeptimer.core.timer.TimerAppScope
@@ -15,15 +17,19 @@ import com.sujal.sleeptimer.core.timer.TimerGateway
 import com.sujal.sleeptimer.core.timer.TimerServiceIntents
 import com.sujal.sleeptimer.feature.home.HomeRoute
 import com.sujal.sleeptimer.feature.home.HomeViewModel
+import com.sujal.sleeptimer.feature.settings.SettingsRoute
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val homeViewModel: HomeViewModel by viewModels()
+    private val settingsViewModel: com.sujal.sleeptimer.feature.settings.SettingsViewModel by viewModels()
+    private var contentReady = false
 
     @Inject lateinit var capabilities: RuntimeCapabilities
 
@@ -35,15 +41,40 @@ class MainActivity : ComponentActivity() {
     lateinit var scope: CoroutineScope
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { SleepTimerApp(homeContent = { onSettings -> HomeRoute(homeViewModel, onSettings) }) }
+        splash.setKeepOnScreenCondition { !contentReady }
+        val appearance = WindowAppearance(window)
+        setContent {
+            val state by settingsViewModel.state.collectAsStateWithLifecycle()
+            SleepTimerRoot(
+                state,
+                settingsViewModel::refresh,
+                homeContent = { openSettings, request, handled ->
+                    HomeRoute(homeViewModel, openSettings, request = request, onRequestHandled = handled)
+                },
+                settingsContent = { back, nightly, test ->
+                    SettingsRoute(
+                        settingsViewModel,
+                        back,
+                        nightly,
+                        test,
+                        { help -> addTimerTile(help) },
+                        { help -> addTimerWidget(help) },
+                    )
+                },
+                appearance = appearance,
+                onReady = { contentReady = true },
+            )
+        }
     }
 
     override fun onPostResume() {
         super.onPostResume()
         capabilities.activityVisible = true
+        settingsViewModel.refresh()
+        handleSurfaceCommand()
         handleDebugCommand()
     }
 
@@ -55,7 +86,22 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (capabilities.activityVisible) handleDebugCommand()
+        if (capabilities.activityVisible) {
+            handleSurfaceCommand()
+            handleDebugCommand()
+        }
+    }
+
+    fun settingsRefresh() = settingsViewModel.refresh()
+
+    private fun handleSurfaceCommand() {
+        if (intent.action == com.sujal.sleeptimer.surface.widget.DialWidget.ACTION_START_LAST) {
+            intent.action = Intent.ACTION_MAIN
+            scope.launch {
+                val state = settingsViewModel.state.first { it.initialized }
+                if (!state.running) gateway.startFromVisibleActivity(state.settings.lastDurationMillis)
+            }
+        }
     }
 
     private fun handleDebugCommand() {

@@ -34,6 +34,8 @@ class FoundationNavigationTest {
         composeRule.setContent {
             SleepTimerApp(homeContent = { action ->
                 com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, settingsContent = { back ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerSettingsScaffold(back) {}
             }, darkTheme = false, dynamicColor = false)
         }
 
@@ -60,6 +62,8 @@ class FoundationNavigationTest {
         composeRule.setContent {
             SleepTimerApp(homeContent = { action ->
                 com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, settingsContent = { back ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerSettingsScaffold(back) {}
             }, darkTheme = true, dynamicColor = false)
         }
         composeRule.onNodeWithContentDescription("Open settings").performClick()
@@ -79,6 +83,8 @@ class FoundationNavigationTest {
         restorationTester.setContent {
             SleepTimerApp(homeContent = { action ->
                 com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+            }, settingsContent = { back ->
+                com.sujal.sleeptimer.core.designsystem.SleepTimerSettingsScaffold(back) {}
             }, darkTheme = false, dynamicColor = false)
         }
         composeRule.onNodeWithContentDescription("Open settings").performClick()
@@ -101,6 +107,8 @@ class FoundationNavigationTest {
             ) {
                 SleepTimerApp(homeContent = { action ->
                     com.sujal.sleeptimer.core.designsystem.SleepTimerHomeTopAppBar(action)
+                }, settingsContent = { back ->
+                    com.sujal.sleeptimer.core.designsystem.SleepTimerSettingsScaffold(back) {}
                 }, darkTheme = true, dynamicColor = false)
             }
         }

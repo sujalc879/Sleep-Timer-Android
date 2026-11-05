@@ -22,13 +22,21 @@ import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.TimerLimits
 import kotlinx.coroutines.launch
 
+enum class HomeRequest { NONE, NIGHTLY, TEST }
+
 private enum class HomeSheet { NONE, CUSTOM, NIGHTLY, READINESS }
-internal enum class ReadinessFix { EXACT, NOTIFICATIONS, BATTERY, SESSIONS }
+internal enum class ReadinessFix { EXACT, NOTIFICATIONS, BATTERY, SESSIONS, ADMIN, RUNTIME }
 
 @Composable
 // Own saveable overlay state and event routing together; rendering lives in separate components.
-@Suppress("LongMethod")
-fun HomeRoute(viewModel: HomeViewModel, onSettings: () -> Unit, modifier: Modifier = Modifier) {
+@Suppress("LongMethod", "CyclomaticComplexMethod")
+fun HomeRoute(
+    viewModel: HomeViewModel,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    request: HomeRequest = HomeRequest.NONE,
+    onRequestHandled: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
@@ -36,28 +44,73 @@ fun HomeRoute(viewModel: HomeViewModel, onSettings: () -> Unit, modifier: Modifi
     var sheet by rememberSaveable { mutableStateOf(HomeSheet.NONE) }
     var testIntro by rememberSaveable { mutableStateOf(false) }
     var awaitingTest by rememberSaveable { mutableStateOf(false) }
+    var testBaseline by rememberSaveable { mutableStateOf(-1L) }
     var testResult by rememberSaveable { mutableStateOf(false) }
+    var exactRationale by rememberSaveable { mutableStateOf(false) }
+    var reliabilityRationale by rememberSaveable { mutableStateOf<ReadinessFix?>(null) }
     val system = homeSystemActions(viewModel::refreshAccess, state, snackbar)
-    val fix = system.fix
+    val fix: (ReadinessFix) -> Unit = { item ->
+        when (item) {
+            ReadinessFix.ADMIN -> {
+                sheet = HomeSheet.NONE
+                onSettings()
+            }
+
+            ReadinessFix.RUNTIME -> {
+                sheet = HomeSheet.NONE
+                viewModel.refreshAccess()
+            }
+
+            ReadinessFix.EXACT -> exactRationale = true
+
+            ReadinessFix.BATTERY, ReadinessFix.SESSIONS -> reliabilityRationale = item
+
+            ReadinessFix.NOTIFICATIONS -> system.fix(item)
+        }
+    }
     val requestNotifications = system.requestNotifications
     val start: (Long) -> Unit = { duration ->
         if (viewModel.start(duration)) {
-            requestNotifications()
+            requestNotifications {
+                if (!state.exactAlarmsAllowed && !state.settings.exactAlarmRationaleShown) {
+                    viewModel.markExactRationaleShown()
+                    exactRationale = true
+                }
+            }
         } else {
             scope.launch { snackbar.showSnackbar(resources.getString(R.string.command_failed)) }
         }
     }
     val test: () -> Unit = {
+        val baseline = viewModel.lastResultStamp
         if (viewModel.startTest()) {
+            testBaseline = baseline
             awaitingTest = true
-            requestNotifications()
+            requestNotifications {
+                if (!state.exactAlarmsAllowed && !state.settings.exactAlarmRationaleShown) {
+                    viewModel.markExactRationaleShown()
+                    exactRationale = true
+                }
+            }
         }
+    }
+    LaunchedEffect(request) {
+        when (request) {
+            HomeRequest.NIGHTLY -> sheet = HomeSheet.NIGHTLY
+
+            HomeRequest.TEST -> if (!state.running) {
+                if (viewModel.isPlaying()) test() else testIntro = true
+            }
+
+            HomeRequest.NONE -> Unit
+        }
+        onRequestHandled()
     }
     ObserveHomeLifecycle(viewModel::refreshAccess)
     LaunchedEffect(viewModel, LocalConfiguration.current) {
         viewModel.messages.collect { snackbar.showSnackbar(resources.getString(it)) }
     }
-    ObserveTestResult(state, awaitingTest, { show ->
+    ObserveTestResult(state, awaitingTest, testBaseline, { show ->
         awaitingTest = false
         testResult = show
     }, { sheet = HomeSheet.NONE })
@@ -80,6 +133,14 @@ fun HomeRoute(viewModel: HomeViewModel, onSettings: () -> Unit, modifier: Modifi
             snackbar = snackbar,
         )
         HomeSheets(sheet, state, viewModel::saveNightly, { sheet = it }, fix, start, snackbar)
+        ExactAlarmRationale(exactRationale, { exactRationale = false }, {
+            exactRationale = false
+            system.fix(ReadinessFix.EXACT)
+        })
+        ReliabilityRationale(reliabilityRationale, { reliabilityRationale = null }, { item ->
+            reliabilityRationale = null
+            system.fix(item)
+        })
         TestDialogs(
             testIntro,
             { testIntro = false },
@@ -146,15 +207,17 @@ private fun HomeSheets(
 }
 
 @Composable
-private fun ObserveTestResult(
+internal fun ObserveTestResult(
     state: HomeUiState,
     awaitingTest: Boolean,
+    baseline: Long,
     onResult: (Boolean) -> Unit,
     onRunning: () -> Unit,
 ) {
-    LaunchedEffect(state.currentResult, state.running) {
-        if (awaitingTest && !state.running && state.currentResult?.isTest == true) {
-            onResult(state.currentResult.status != com.sujal.sleeptimer.core.model.StopStatus.CANCELLED)
+    LaunchedEffect(state.currentResult, state.running, awaitingTest, baseline) {
+        val completion = state.currentResult?.takeIf { it.isTest && it.completedElapsed != baseline }
+        if (awaitingTest && !state.running && completion != null) {
+            onResult(completion.status != com.sujal.sleeptimer.core.model.StopStatus.CANCELLED)
         }
         if (state.running) onRunning()
     }

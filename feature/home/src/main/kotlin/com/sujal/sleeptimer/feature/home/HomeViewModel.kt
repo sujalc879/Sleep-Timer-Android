@@ -36,11 +36,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-@Suppress("LongParameterList") // Explicit DI ports; the ViewModel owns presentation rather than runtime effects.
+// Explicit DI ports and UI intents; the ViewModel owns presentation, not runtime effects.
+@Suppress("LongParameterList", "TooManyFunctions")
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val engine: TimerEngine,
-    settings: SettingsStore,
+    private val settings: SettingsStore,
     private val clock: Clock,
     private val gateway: TimerGateway,
     private val playback: PlaybackController,
@@ -111,6 +112,16 @@ class HomeViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), HomeUiState())
 
+    fun markExactRationaleShown() {
+        viewModelScope.launch {
+            try {
+                settings.update { it.copy(exactAlarmRationaleShown = true) }
+            } catch (_: IOException) {
+                messages.emit(R.string.command_failed)
+            }
+        }
+    }
+
     fun selectMinutes(minutes: Int) {
         selection.value = minutes * TimerLimits.MINUTE
     }
@@ -142,6 +153,8 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    val lastResultStamp: Long get() = engine.state.value.snapshot.lastResult?.completedElapsed ?: -1L
 
     fun startTest(): Boolean = !state.value.running && gateway.testFromVisibleActivity()
     suspend fun isPlaying(): Boolean = playback.observe().playing

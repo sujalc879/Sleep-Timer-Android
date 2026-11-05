@@ -63,19 +63,8 @@ internal fun ReadinessSheet(state: HomeUiState, onDismiss: () -> Unit, onFix: (R
             ) {
                 onFix(ReadinessFix.SESSIONS)
             }
-            val result = when (state.lastTest?.status) {
-                null -> R.string.test_not_run
-
-                StopStatus.STOPPED -> if (state.lastTest.localOnly) {
-                    R.string.test_local_stopped
-                } else {
-                    R.string.test_stopped
-                }
-
-                StopStatus.NOTHING_PLAYING -> R.string.finished_quiet
-
-                else -> R.string.test_failed
-            }
+            ReadinessExtraRows(state, onFix)
+            val result = readinessResult(state)
             ListItem(supportingContent = { Text(stringResource(result)) }) {
                 Text(stringResource(R.string.last_test))
             }
@@ -86,4 +75,37 @@ internal fun ReadinessSheet(state: HomeUiState, onDismiss: () -> Unit, onFix: (R
 @Composable
 private fun ReadinessRow(title: String, status: String, onClick: () -> Unit) {
     ListItem(onClick = onClick, supportingContent = { Text(status) }) { Text(title) }
+}
+
+private fun readinessResult(state: HomeUiState): Int = when (state.lastTest?.status) {
+    null -> R.string.test_not_run
+
+    StopStatus.STOPPED -> if (state.lastTest.localOnly) {
+        R.string.test_local_stopped
+    } else {
+        R.string.test_stopped
+    }
+
+    StopStatus.NOTHING_PLAYING -> R.string.finished_quiet
+
+    else -> R.string.test_failed
+}
+
+@Composable
+private fun ReadinessExtraRows(state: HomeUiState, onFix: (ReadinessFix) -> Unit) {
+    Column {
+        if (state.degradedReason != null && state.exactAlarmsAllowed) {
+            ReadinessRow(
+                stringResource(R.string.runtime_attention),
+                stringResource(R.string.runtime_attention_help),
+            ) {
+                onFix(ReadinessFix.RUNTIME)
+            }
+        }
+        if (state.settings.screenOffAdminRevoked) {
+            ReadinessRow(stringResource(R.string.admin_revoked), stringResource(R.string.admin_revoked_help)) {
+                onFix(ReadinessFix.ADMIN)
+            }
+        }
+    }
 }

@@ -10,6 +10,7 @@ android { namespace = "com.sujal.sleeptimer.feature.home" }
 dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
+    implementation(project(":core:system"))
     implementation(project(":core:timer"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
