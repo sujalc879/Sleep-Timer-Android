@@ -14,6 +14,8 @@ import android.os.Build
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.graphics.drawable.IconCompat
 import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.Clock
 import com.sujal.sleeptimer.core.model.Diagnostics
@@ -31,7 +33,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 
-/** Phase 1's ordinary notification; promoted Live Updates arrive with the surfaces phase. */
+/** Silent platform countdown with conditional Live Update promotion and ordinary fallback. */
 @Suppress("TooManyFunctions") // One notification lifecycle implementation plus its builders.
 class BasicTimerNotifications(
     private val context: Context,
@@ -42,9 +44,19 @@ class BasicTimerNotifications(
     private val diagnostics: Diagnostics,
 ) : TimerNotifications {
     private val manager = context.getSystemService(NotificationManager::class.java)
-    private val settings = settingsStore.data.stateIn(scope, SharingStarted.Eagerly, AppSettings())
+    private val storedSettings = settingsStore.data.stateIn(scope, SharingStarted.Eagerly, AppSettings())
 
-    @Volatile private var dismissedRun: String? = null
+    @Volatile private var explicitSettings: AppSettings? = null
+    private val preferences: AppSettings get() = explicitSettings ?: storedSettings.value
+    override fun settingsChanged(settings: AppSettings) {
+        explicitSettings = settings
+    }
+
+    private val dismissal = context.getSharedPreferences("notification-dismissal", Context.MODE_PRIVATE)
+
+    @Volatile private var dismissedRun: String? = dismissal.getString("run", null)
+
+    @Volatile private var presentedRevision = -1L
 
     init {
         manager.createNotificationChannels(
@@ -62,6 +74,7 @@ class BasicTimerNotifications(
             ).onEach {
                 it.setSound(null, null)
                 it.enableVibration(false)
+                it.setShowBadge(false)
             },
         )
     }
@@ -69,12 +82,17 @@ class BasicTimerNotifications(
     override fun foreground(state: TimerUiState): Notification = buildRunning(state)
 
     override fun refresh(state: TimerUiState, stateChanged: Boolean) {
-        if (stateChanged) dismissedRun = null
+        if (stateChanged) {
+            dismissedRun = null
+            dismissal.edit { remove("run") }
+        }
         if (dismissedRun != state.snapshot.run?.id) post(TimerNotificationIds.RUNNING, buildRunning(state))
     }
 
     override fun dismissed(runId: String, revision: Long) {
+        if (presentedRevision >= 0 && revision != presentedRevision) return
         dismissedRun = runId
+        dismissal.edit { putString("run", runId) }
         diagnostics.record("timer-notification-dismissed")
     }
 
@@ -125,6 +143,7 @@ class BasicTimerNotifications(
         if (!state.initialized || run == null) {
             return builder.setContentTitle(context.getString(R.string.preparing_timer)).build()
         }
+        presentedRevision = state.snapshot.revision
         val remaining = (run.endElapsed - clock.elapsedRealtime()).coerceAtLeast(0)
         val endWall = clock.wallTimeMillis() + remaining
         val end = DateFormat.getTimeFormat(context).format(Date(endWall))
@@ -140,10 +159,16 @@ class BasicTimerNotifications(
             } else {
                 context.resources.getQuantityString(R.plurals.minutes_left, minutes, minutes)
             }
+        val description = if (preferences.fadeMillis > 0 && state.degradedReason == null) {
+            context.getString(R.string.remaining_with_fade, text, preferences.fadeMillis / TimerLimits.SECOND)
+        } else {
+            text
+        }
         val fraction = remaining.toDouble() / run.totalDurationMillis.coerceAtLeast(1)
         val progress = (fraction * PROGRESS_MAX).toInt().coerceIn(0, PROGRESS_MAX)
-        val extend = settings.value.extendMillis
-        return builder.setContentTitle(title).setContentText(text)
+        val extend = preferences.extendMillis
+        applyPromotion(builder, progress)
+        return builder.setContentTitle(title).setContentText(description)
             .setWhen(endWall).setShowWhen(true).setUsesChronometer(remaining > 0).setChronometerCountDown(true)
             .setProgress(PROGRESS_MAX, progress, false)
             .setDeleteIntent(dismissIntent(run.id, state.snapshot.revision))
@@ -154,6 +179,25 @@ class BasicTimerNotifications(
             )
             .addAction(0, context.getString(R.string.stop_action), action(run.id, TimerServiceIntents.CANCEL, 0))
             .build()
+    }
+
+    private fun applyPromotion(builder: NotificationCompat.Builder, progress: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return
+        if (Build.VERSION.SDK_INT_FULL < Build.VERSION_CODES_FULL.BAKLAVA_1) return
+        try {
+            if (manager.canPostPromotedNotifications()) {
+                builder.setRequestPromotedOngoing(true).setStyle(
+                    NotificationCompat.ProgressStyle().setProgressSegments(
+                        listOf(NotificationCompat.ProgressStyle.Segment(PROGRESS_MAX)),
+                    )
+                        .setProgress(
+                            progress,
+                        ).setProgressTrackerIcon(IconCompat.createWithResource(context, R.drawable.ic_tracker_dot)),
+                )
+            }
+        } catch (_: RuntimeException) {
+            diagnostics.record("notification-promotion-unavailable")
+        }
     }
 
     private fun base(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)

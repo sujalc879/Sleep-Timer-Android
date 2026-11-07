@@ -45,6 +45,46 @@ class BasicTimerNotificationsTest {
         }
     }
 
+    @Test fun dismissalSurvivesControllerRecreationAndOldRevisionsCannotHideANewerNotification() = runTest {
+        fun factory() = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {
+            },
+        )
+        factory().dismissed("run-1", 0)
+        val recreated = factory()
+        val manager = context.getSystemService(NotificationManager::class.java)
+        recreated.refresh(running(), stateChanged = false)
+        assertThat(manager.activeNotifications).isEmpty()
+        val newer = running().copy(snapshot = running().snapshot.copy(revision = 4))
+        recreated.refresh(newer, stateChanged = true)
+        recreated.dismissed("run-1", 3)
+        recreated.refresh(newer, stateChanged = false)
+        assertThat(manager.activeNotifications).hasLength(1)
+    }
+
+    @Test fun configuredFadeAndExtendAreReflectedByTheOrdinaryFallback() = runTest {
+        val factory =
+            BasicTimerNotifications(
+                context,
+                clock,
+                ComponentName(context, "MainActivity"),
+                store,
+                backgroundScope,
+                Diagnostics {
+                },
+            )
+        factory.settingsChanged(AppSettings(fadeMillis = 5_000, extendMillis = 20 * TimerLimits.MINUTE))
+        val notification = factory.foreground(running())
+        assertThat(notification.extras.getString(Notification.EXTRA_TEXT)).isEqualTo("1 min left · fades out over 5 s")
+        assertThat(notification.actions[0].title.toString()).isEqualTo("+20 min")
+        assertThat(notification.contentView).isNull()
+    }
+
     @Test
     fun actionsAreImmutableExplicitRunBoundAndDoNotReuseCommandIds() = runTest {
         val factory =

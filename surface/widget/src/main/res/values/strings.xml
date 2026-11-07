@@ -4,4 +4,8 @@
     <string name="widget_start">Tap to start</string>
     <string name="widget_running">Running</string>
     <string name="widget_chronometer">Remaining time</string>
+    <string name="widget_presets_label">Sleep timer presets</string>
+    <plurals name="widget_start_minutes"><item quantity="one">Start a sleep timer for %d minutes</item><item quantity="other">Start a sleep timer for %d minutes</item></plurals>
+    <plurals name="widget_minutes"><item quantity="one">%d minute</item><item quantity="other">%d minutes</item></plurals>
+    <plurals name="widget_selected_minutes"><item quantity="one">Selected. Start a sleep timer for %d minute</item><item quantity="other">Selected. Start a sleep timer for %d minutes</item></plurals>
 </resources>

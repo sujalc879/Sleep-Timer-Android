@@ -1,5 +1,7 @@
 package com.sujal.sleeptimer.surface.tile
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
@@ -14,12 +16,14 @@ import com.sujal.sleeptimer.core.timer.TimerEngine
 import com.sujal.sleeptimer.core.timer.TimerServiceIntents
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -31,7 +35,12 @@ class SleepTimerTile : TileService() {
     @Inject lateinit var clock: Clock
 
     @Inject lateinit var diagnostics: Diagnostics
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val scope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.Main.immediate + CoroutineExceptionHandler { _, _ ->
+                diagnostics.record("tile-operation-unavailable")
+            },
+        )
     private var listening: Job? = null
 
     override fun onTileAdded() {
@@ -43,10 +52,13 @@ class SleepTimerTile : TileService() {
     override fun onStartListening() {
         listening?.cancel()
         listening = scope.launch {
-            engine.state.first { it.initialized }
-            while (isActive) {
-                refresh()
-                delay(REFRESH)
+            engine.state.collectLatest { state ->
+                if (state.initialized) {
+                    while (isActive) {
+                        refresh()
+                        delay(REFRESH)
+                    }
+                }
             }
         }
     }
@@ -56,6 +68,17 @@ class SleepTimerTile : TileService() {
     override fun onClick() {
         scope.launch {
             val snapshot = engine.state.first { it.initialized }.snapshot
+            if (!snapshot.isActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
+                startActivityAndCollapse(
+                    PendingIntent.getActivity(
+                        this@SleepTimerTile,
+                        0,
+                        Intent(this@SleepTimerTile, TileStartActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    ),
+                )
+                return@launch
+            }
             val intent = if (snapshot.isActive) {
                 TimerServiceIntents.base(this@SleepTimerTile, TimerServiceIntents.CANCEL)
                     .putExtra(TimerServiceIntents.EXPECTED_RUN, snapshot.run?.id)
@@ -63,6 +86,7 @@ class SleepTimerTile : TileService() {
                 TimerServiceIntents.base(this@SleepTimerTile, TimerServiceIntents.START)
                     .putExtra(TimerServiceIntents.DURATION, snapshot.selectedDurationMillis)
                     .putExtra(TimerServiceIntents.SOURCE, StartSource.TILE.name)
+                    .putExtra(TimerServiceIntents.ONLY_IF_IDLE, true)
             }
             try {
                 ContextCompat.startForegroundService(this@SleepTimerTile, intent)
@@ -78,7 +102,7 @@ class SleepTimerTile : TileService() {
             label = getString(R.string.tile_label)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val remaining = (snapshot.run?.endElapsed ?: 0) - clock.elapsedRealtime()
-                val minutes = ((remaining + TimerLimits.MINUTE - 1) / TimerLimits.MINUTE).coerceAtLeast(1).toInt()
+                val minutes = (remaining / TimerLimits.MINUTE).coerceAtLeast(1).toInt()
                 subtitle = when {
                     !snapshot.isActive -> getString(R.string.tile_off)
                     remaining < TimerLimits.MINUTE -> getString(R.string.tile_under_minute)
@@ -93,6 +117,6 @@ class SleepTimerTile : TileService() {
         super.onDestroy()
     }
     companion object {
-        private const val REFRESH = 15_000L
+        private const val REFRESH = 1_000L
     }
 }

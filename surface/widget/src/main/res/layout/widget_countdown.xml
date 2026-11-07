@@ -1,4 +1,5 @@
 <Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/countdown" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:id="@+id/countdown" android:layout_width="match_parent" android:layout_height="match_parent"
     android:gravity="center" android:textSize="36sp" android:textColor="?android:attr/textColorPrimary"
-    android:contentDescription="@string/widget_chronometer" android:fontFamily="sans" />
+    android:autoSizeTextType="uniform" android:autoSizeMinTextSize="4sp" android:autoSizeMaxTextSize="36sp" android:autoSizeStepGranularity="1sp"
+    android:contentDescription="@string/widget_chronometer" android:fontFamily="sans" android:fontFeatureSettings="tnum" />
