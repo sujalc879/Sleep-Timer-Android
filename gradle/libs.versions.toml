@@ -2,7 +2,7 @@
 # Material 3 is the sole prerelease exception required by AGENTS.md.
 # AGP 9 supplies built-in Kotlin; Android modules must not apply kotlin-android.
 [versions]
-agp = "9.5.0"
+agp = "9.5.1"
 kotlin = "2.4.21"
 compose-bom = "2026.09.00"
 material3 = "1.5.0-rc01"
