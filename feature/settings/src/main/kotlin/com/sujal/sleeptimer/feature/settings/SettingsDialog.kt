@@ -10,4 +10,5 @@ internal enum class SettingsDialog {
     SESSIONS,
     TILE_HELP,
     WIDGET_HELP,
+    WIDGET_PICKER,
 }

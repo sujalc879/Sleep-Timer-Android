@@ -43,7 +43,7 @@ fun SettingsRoute(
     onNightly: () -> Unit,
     onTest: () -> Unit,
     onAddTile: (onHelp: () -> Unit) -> Unit,
-    onAddWidget: (onHelp: () -> Unit) -> Unit,
+    onAddWidget: (presets: Boolean, onHelp: () -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -101,7 +101,7 @@ fun SettingsRoute(
                 },
                 nightly = onNightly, test = onTest,
                 tile = { onAddTile { dialog = SettingsDialog.TILE_HELP } },
-                widget = { onAddWidget { dialog = SettingsDialog.WIDGET_HELP } },
+                widget = { dialog = SettingsDialog.WIDGET_PICKER },
                 extend = { dialog = SettingsDialog.EXTEND }, warning = { dialog = SettingsDialog.WARNING },
                 battery = { dialog = SettingsDialog.BATTERY }, sessions = { dialog = SettingsDialog.SESSIONS },
             ),
@@ -110,6 +110,11 @@ fun SettingsRoute(
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
         val dismiss = { dialog = SettingsDialog.NONE }
         when (dialog) {
+            SettingsDialog.WIDGET_PICKER -> SettingsWidgetPicker({ presets ->
+                dialog = SettingsDialog.NONE
+                onAddWidget(presets) { dialog = SettingsDialog.WIDGET_HELP }
+            }, dismiss)
+
             SettingsDialog.NONE -> Unit
 
             SettingsDialog.EXTEND, SettingsDialog.WARNING -> SettingsPicker(dialog, state, { value ->

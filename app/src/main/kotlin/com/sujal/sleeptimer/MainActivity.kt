@@ -8,8 +8,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.sujal.sleeptimer.core.model.PlaybackController
 import com.sujal.sleeptimer.core.model.RuntimeCapabilities
 import com.sujal.sleeptimer.core.timer.TimerAppScope
@@ -30,6 +33,9 @@ class MainActivity : ComponentActivity() {
     private val homeViewModel: HomeViewModel by viewModels()
     private val settingsViewModel: com.sujal.sleeptimer.feature.settings.SettingsViewModel by viewModels()
     private var contentReady = false
+    private var externalNavigation by mutableLongStateOf(0L)
+
+    @Inject lateinit var surfaceLaunch: SurfaceLaunchCoordinator
 
     @Inject lateinit var capabilities: RuntimeCapabilities
 
@@ -52,7 +58,14 @@ class MainActivity : ComponentActivity() {
                 state,
                 settingsViewModel::refresh,
                 homeContent = { openSettings, request, handled ->
-                    HomeRoute(homeViewModel, openSettings, request = request, onRequestHandled = handled)
+                    HomeRoute(
+                        homeViewModel,
+                        openSettings,
+                        request = request,
+                        onRequestHandled = handled,
+                        surfaceEvents = surfaceLaunch.events,
+                        onSurfaceConsumed = surfaceLaunch::consumed,
+                    )
                 },
                 settingsContent = { back, nightly, test ->
                     SettingsRoute(
@@ -61,11 +74,12 @@ class MainActivity : ComponentActivity() {
                         nightly,
                         test,
                         { help -> addTimerTile(help) },
-                        { help -> addTimerWidget(help) },
+                        { presets, help -> addTimerWidget(help, presets) },
                     )
                 },
                 appearance = appearance,
                 onReady = { contentReady = true },
+                externalNavigation = externalNavigation,
             )
         }
     }
@@ -95,13 +109,13 @@ class MainActivity : ComponentActivity() {
     fun settingsRefresh() = settingsViewModel.refresh()
 
     private fun handleSurfaceCommand() {
-        if (intent.action == com.sujal.sleeptimer.surface.widget.DialWidget.ACTION_START_LAST) {
-            intent.action = Intent.ACTION_MAIN
-            scope.launch {
-                val state = settingsViewModel.state.first { it.initialized }
-                if (!state.running) gateway.startFromVisibleActivity(state.settings.lastDurationMillis)
-            }
-        }
+        val request = com.sujal.sleeptimer.core.timer.SurfaceIntents.parse(
+            intent.action,
+            intent.getIntExtra(com.sujal.sleeptimer.core.timer.SurfaceIntents.MINUTES, -1),
+        ) ?: return
+        intent.action = Intent.ACTION_MAIN
+        externalNavigation++
+        lifecycleScope.launch { surfaceLaunch.launch(request) }
     }
 
     private fun handleDebugCommand() {

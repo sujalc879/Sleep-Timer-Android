@@ -95,3 +95,13 @@ internal fun SettingsExplanation(
 @Suppress("MagicNumber") // Product's supported extension choices.
 private val EXTEND_MINUTES = listOf(5, 10, 15, 20, 30)
 private const val MINUTE = 60_000L
+
+@Composable
+internal fun SettingsWidgetPicker(onChoose: (Boolean) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.widget)) }, text = {
+        Column {
+            TextButton(onClick = { onChoose(false) }) { Text(stringResource(R.string.widget_dial)) }
+            TextButton(onClick = { onChoose(true) }) { Text(stringResource(R.string.widget_presets)) }
+        }
+    }, confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
+}

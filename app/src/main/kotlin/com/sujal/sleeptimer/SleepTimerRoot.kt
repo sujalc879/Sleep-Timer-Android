@@ -24,6 +24,7 @@ fun SleepTimerRoot(
     settingsContent: @Composable (onBack: () -> Unit, onNightly: () -> Unit, onTest: () -> Unit) -> Unit,
     appearance: WindowAppearance,
     onReady: () -> Unit,
+    externalNavigation: Long = 0L,
 ) {
     var homeVisible by remember { mutableStateOf(true) }
     var request by rememberSaveable { mutableStateOf(HomeRequest.NONE) }
@@ -66,6 +67,7 @@ fun SleepTimerRoot(
             })
         },
         onHomeVisible = { homeVisible = it },
+        externalNavigation = externalNavigation,
         darkTheme = dark,
         dynamicColor = state.settings.dynamicColor,
     )

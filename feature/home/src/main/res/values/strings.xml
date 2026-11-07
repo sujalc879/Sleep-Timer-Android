@@ -87,4 +87,7 @@
     <string name="manufacturer_guide">Manufacturer guide</string>
     <string name="runtime_attention">Timer needs attention</string>
     <string name="runtime_attention_help">Open the app to keep the timer service running.</string>
+    <string name="timer_replaced">Timer replaced</string>
+    <string name="undo">Undo</string>
+    <string name="undo_unavailable">The previous timer ended or the timer changed.</string>
 </resources>

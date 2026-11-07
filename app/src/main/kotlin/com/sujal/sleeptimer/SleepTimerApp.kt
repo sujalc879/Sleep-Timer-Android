@@ -28,8 +28,12 @@ fun SleepTimerApp(
     onHomeVisible: (Boolean) -> Unit = {},
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
+    externalNavigation: Long = 0L,
 ) {
     val backStack = rememberNavBackStack(Home)
+    androidx.compose.runtime.LaunchedEffect(externalNavigation) {
+        if (externalNavigation > 0) while (backStack.size > 1) backStack.removeLastOrNull()
+    }
     SideEffect { onHomeVisible(backStack.lastOrNull() == Home) }
     val navigateBack: () -> Unit = {
         if (backStack.size > 1) {

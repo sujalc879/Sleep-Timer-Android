@@ -20,6 +20,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.TimerLimits
+import com.sujal.sleeptimer.core.timer.SurfaceEvent
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
 enum class HomeRequest { NONE, NIGHTLY, TEST }
@@ -36,6 +39,8 @@ fun HomeRoute(
     modifier: Modifier = Modifier,
     request: HomeRequest = HomeRequest.NONE,
     onRequestHandled: () -> Unit = {},
+    surfaceEvents: Flow<SurfaceEvent?> = emptyFlow(),
+    onSurfaceConsumed: (String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val resources = LocalResources.current
@@ -106,6 +111,9 @@ fun HomeRoute(
         }
         onRequestHandled()
     }
+    ObserveSurfaceEvent(surfaceEvents, {
+        sheet = HomeSheet.CUSTOM
+    }, viewModel::undoReplacement, snackbar, onSurfaceConsumed)
     ObserveHomeLifecycle(viewModel::refreshAccess)
     LaunchedEffect(viewModel, LocalConfiguration.current) {
         viewModel.messages.collect { snackbar.showSnackbar(resources.getString(it)) }

@@ -1,0 +1,11 @@
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="start_30" android:shortcutShortLabel="@string/shortcut_30" android:icon="@drawable/ic_shortcut_play">
+        <intent android:action="com.sujal.sleeptimer.action.START_30" android:targetPackage="@string/shortcut_target_package" android:targetClass="com.sujal.sleeptimer.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="start_60" android:shortcutShortLabel="@string/shortcut_60" android:icon="@drawable/ic_shortcut_play">
+        <intent android:action="com.sujal.sleeptimer.action.START_60" android:targetPackage="@string/shortcut_target_package" android:targetClass="com.sujal.sleeptimer.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="custom" android:shortcutShortLabel="@string/shortcut_custom" android:icon="@drawable/ic_shortcut_clock">
+        <intent android:action="com.sujal.sleeptimer.action.CUSTOM" android:targetPackage="@string/shortcut_target_package" android:targetClass="com.sujal.sleeptimer.MainActivity" />
+    </shortcut>
+</shortcuts>

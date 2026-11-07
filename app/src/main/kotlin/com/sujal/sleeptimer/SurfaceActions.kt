@@ -6,7 +6,6 @@ import android.content.ComponentName
 import android.graphics.drawable.Icon
 import android.os.Build
 import com.sujal.sleeptimer.surface.tile.SleepTimerTile
-import com.sujal.sleeptimer.surface.widget.DialWidgetReceiver
 
 fun MainActivity.addTimerTile(onHelp: () -> Unit) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -32,11 +31,12 @@ fun MainActivity.addTimerTile(onHelp: () -> Unit) {
     }
 }
 
-fun MainActivity.addTimerWidget(onHelp: () -> Unit) {
+fun MainActivity.addTimerWidget(onHelp: () -> Unit, presets: Boolean = false) {
     val manager = getSystemService(AppWidgetManager::class.java)
+    val provider = com.sujal.sleeptimer.surface.widget.widgetProviderComponent(this, presets)
     try {
         if (!manager.isRequestPinAppWidgetSupported ||
-            !manager.requestPinAppWidget(ComponentName(this, DialWidgetReceiver::class.java), null, null)
+            !manager.requestPinAppWidget(provider, null, null)
         ) {
             onHelp()
         }

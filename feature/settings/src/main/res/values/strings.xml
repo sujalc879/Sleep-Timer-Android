@@ -58,4 +58,6 @@
     <string name="tile_help">Open Quick Settings, tap Edit, then drag Sleep timer into your active tiles.</string>
     <string name="widget_help">Touch and hold your home screen, choose Widgets, then add Sleep timer.</string>
     <plurals name="minutes"><item quantity="one">%d minute</item><item quantity="other">%d minutes</item></plurals>
+    <string name="widget_dial">Dial widget</string>
+    <string name="widget_presets">Presets widget</string>
 </resources>

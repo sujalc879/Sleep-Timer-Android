@@ -140,6 +140,13 @@ class HomeViewModel @Inject constructor(
         return gateway.startFromVisibleActivity(duration)
     }
 
+    fun undoReplacement(runId: String) {
+        viewModelScope.launch {
+            val result = engine.send(TimerCommand.UndoReplacement(runId, UUID.randomUUID().toString()))
+            if (!result.accepted) messages.emit(R.string.undo_unavailable)
+        }
+    }
+
     fun cancel() {
         sendForRun { TimerCommand.Stop(UUID.randomUUID().toString(), it) }
     }

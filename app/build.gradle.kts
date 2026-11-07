@@ -8,13 +8,18 @@ plugins {
 
 android {
     namespace = "com.sujal.sleeptimer"
+    buildFeatures { resValues = true }
     defaultConfig {
         applicationId = "com.sujal.sleeptimer"
         versionCode = 1
         versionName = "0.1.0"
+        resValue("string", "shortcut_target_package", "com.sujal.sleeptimer")
     }
     buildTypes {
-        debug { applicationIdSuffix = ".debug" }
+        debug {
+            applicationIdSuffix = ".debug"
+            resValue("string", "shortcut_target_package", "com.sujal.sleeptimer.debug")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
