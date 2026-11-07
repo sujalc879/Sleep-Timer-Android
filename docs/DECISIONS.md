@@ -280,3 +280,33 @@ Sources: [Material 3 releases](https://developer.android.com/jetpack/androidx/re
 **Accepted.** On API 26–30 Android cannot persist the app night-mode override through UiModeManager. Use the generated dark surface for the starting window in both system modes; hold it until settings/snapshot readiness and the selected Compose theme can draw. This avoids a light starting flash for explicit Dark when the system is Light. A Light selection transitions from that dark starting surface to its intended light screen. API 31+ retains the matching system/application-mode launch resources. Physical cold-start visual checks remain pending.
 
 A new 10-second request captures the engine's current completion stamp before service delivery. Its visible result observer ignores that older result until a new completion arrives. Recomposition while a previous test is still stored must never be presented as a new successful player check. A regression drives old result → new running state → new completion through the actual Compose observer.
+
+## D041 — System-surface behavior and API boundaries
+
+**Accepted for Phase 4.** Request Live Update promotion only on Android 16 QPR1 (36.1) or later when the system permits it, using standard ProgressStyle and a countdown `when` rather than repeatedly posting second-by-second chip text. API 35 retains an ordinary ongoing chronometer/progress notification. Promotion remains the system's decision. Never turn notification dismissal into timer cancellation.
+
+Widgets use Glance with RemoteViews interop for the host chronometer and rendered ring bitmap. Render the ring at state changes and at most once per minute; no second-by-second app widget updates or periodic provider wakeups. Generate previews independently from user state and retain static preview fallbacks. Shortcut and widget inputs are explicit and bounded; Undo is run-bound and cannot resurrect an expired timer or overwrite a newer command.
+
+Sources: [Live Updates](https://developer.android.com/develop/ui/views/notifications/live-update), [Glance generated previews](https://developer.android.com/develop/ui/compose/glance/generated-previews), [static shortcuts](https://developer.android.com/develop/ui/views/launch/shortcuts/creating-shortcuts), [TileService](https://developer.android.com/reference/android/service/quicksettings/TileService).
+
+## D042 — Reactive widget state and conservative tile startup
+
+**Accepted.** Pinned Glance source confirms that updateAll can reuse an existing session; a snapshot captured before provideContent will not become fresh by itself. Publish a versioned presentation through Glance preferences and read it in composition, rejecting older-boot/older-render data in favor of the freshly restored engine. Update both widget providers together on meaningful state changes and minute ticks, and refresh on screen-on, configuration, locale, time and zone changes. Generated previews use explicit preview data, never a user's run.
+
+On API 37, tile start goes through a resumed transparent Activity, with an immutable explicit PendingIntent and show-when-locked, before invoking the visible-Activity gateway. This is the conservative WIU path; it does not claim emulator hardening evidence. API 26–36 retain direct user-tap service startup. Stops remain run-bound cancellation, including on the lock screen. Tile listening observes engine changes immediately; subtitle ticks occur only while listening.
+
+Undo is an engine-owned, in-memory replacement record valid for 60 seconds and the same run/schedule generation. It restores the former still-future deadline under a new run ID, retaining warning history and safely recovering any current fade. It is unavailable after process death, expiry or another adjustment; it cannot restart playback.
+
+## D043 — Preserve Undo identity when remembering a duration
+
+**Accepted after a regression exposed the race.** A successful start now takes the settings object returned by the atomic last-duration write into the engine before its queued settings notification is processed. That notification becomes a no-op rather than spuriously incrementing the schedule generation and invalidating the same start's Undo. The timer snapshot already stores selection durably; a failed preference-only duration write is logged and must not prevent alarm scheduling or the stop pipeline. The same rule applies to restoring a previous deadline. Host regressions cover Undo, expiry, stale actions, idle-only widget races and a duration-preference write failure.
+
+## D044 — November 7 build-tool patch refresh
+
+**Verified.** Required lint detected AGP 9.5.1 and Gradle 9.9.0 after this phase resumed. Google's official AGP module metadata declares JVM 17, and the checksum-verified Gradle 9.9.0 wrapper ran successfully on the existing JDK 17.0.20.1. Pin the project versions and official distribution SHA-256; no SDK/JDK/emulator/global CLI installation occurred. Keep the required dependency/version lint enabled.
+
+Sources: [official AGP module metadata](https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/9.5.1/gradle-9.5.1.module), [official Gradle distribution checksum](https://services.gradle.org/distributions/gradle-9.9.0-bin.zip.sha256).
+
+## D045 — Repeated shortcut delivery and Activity UI ownership
+
+**Verified by phone tracing.** The first Custom launch was handled, but repeated task-front launches of the standard Activity produced no new-intent callback. Set MainActivity to `singleTop` so repeated launches reach `onNewIntent`, including the same action. Keep launch UI events Activity-retained rather than process-global: they survive rotation within an Activity and cannot be consumed by another Activity's UI. The timer engine/gateway remain process singletons. After removing the temporary trace, rebuilding and installing, three consecutive explicit Custom launches each opened and dismissed the real sheet on the Android 15 phone. Host manifest/input tests alone do not prove delivery; launcher presentation and fixed-start/Undo interaction remain device checks.

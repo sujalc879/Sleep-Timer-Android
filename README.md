@@ -4,7 +4,7 @@ Native Android sleep timer, built with Kotlin and Material 3 Expressive. The bui
 
 ## Current scope
 
-Phases 0–3 provide the timer engine/service, guarded playback stopping and volume handling, adaptive Home controls, complete Settings and permission flows, shake extension, optional screen locking and dimming. A supporting tile and countdown widget make the Settings Add actions functional; full system surfaces are Phase 4. Host checks pass, while physical playback/Doze, sensor, DND and OEM reliability gates remain pending. This is a development build.
+Phases 0–4 provide the timer engine/service, guarded playback stopping and volume handling, adaptive Home controls, Settings and permission flows, shake extension, optional screen locking and dimming, notifications with eligible Live Update requests, a Quick Settings tile, both widgets and launcher shortcuts with replacement Undo. Host checks pass; the current APK opens on Android 15 and repeated Custom shortcut delivery is verified. Physical surface synchronization, playback/Doze, sensor, DND, API 36.1/37 and OEM reliability gates remain pending. This is a development build.
 
 See [docs/PROGRESS.md](docs/PROGRESS.md) for observed validation results and pending runtime checks, [docs/PLAN.md](docs/PLAN.md) for the phase sequence, and [docs/DECISIONS.md](docs/DECISIONS.md) for engineering choices.
 
@@ -42,7 +42,7 @@ After a successful debug build, install on an emulator or a connected phone:
 ./gradlew :app:installDebug
 ```
 
-See [Phase 3 test steps](docs/PHASE3_TESTING.md) for all controls and consent flows. For a quick check, play media, open **Sleep timer** → **Settings** → **Run a 10-second test**. The Stop control cancels the timer and leaves playback running; expiry uses the stop pipeline.
+See [Phase 4 test steps](docs/PHASE4_TESTING.md) for notifications, tile, both widgets and shortcuts, and [Phase 3 test steps](docs/PHASE3_TESTING.md) for controls and consent flows. For a quick check, play media, open **Sleep timer** → **Settings** → **Run a 10-second test**. The Stop control cancels the timer and leaves playback running; expiry uses the stop pipeline.
 
 For navigation/appearance, tap the tune action to open **Settings**, and return using the Back arrow and system Back. Rotate on each screen, repeat with the largest font setting and both system light/dark themes, then cold-launch in dark mode to inspect splash continuity. Android 12+ uses wallpaper colors. Android 8–11 uses the generated fallback palette. Check gesture and three-button navigation insets where available.
 

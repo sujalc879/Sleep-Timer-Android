@@ -1,14 +1,46 @@
 # Progress
 
-Last updated: 2026-11-05 (Asia/Kolkata).
+Last updated: 2026-11-07 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 3 Settings and features is implemented and host verification passes. Stop before Phase 4 system surfaces.** Stop still cancels the timer and leaves playback running. Physical-device exit gates remain pending; this is not a production-readiness claim.
+**Phase 4 System surfaces is implemented and host verification passes. Stop before Phase 5 Hardening.** The physical synchronization exit gate remains pending. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline. This is a development build, not a production-readiness claim.
 
-ADB started successfully but reported **no connected devices** during Phase 3. No phone installation, screen locking, playback stop, physical shake, DND or overnight timing result is claimed for this phase. The Moto g54 5G / Android 15 installed and opened the prior Phase 2 APK; that historical result does not validate this new APK.
+The current debug APK is installed on the connected Moto g54 5G / Android 15 (API 35). Home opened and was visually inspected. After fixing repeated shortcut delivery, three consecutive explicit Custom shortcut launches each opened the real duration sheet and dismissed successfully. The phone was left idle, with no timer running. This does not validate launcher shortcut presentation, playback stopping or background reliability.
 
-See [PHASE3_TESTING.md](PHASE3_TESTING.md) for installation and every Settings/permission/sensor test, [PHASE2_TESTING.md](PHASE2_TESTING.md) for Home controls, and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/Doze/recovery procedures.
+See [PHASE4_TESTING.md](PHASE4_TESTING.md) for notifications, tile, both widgets, shortcuts/Undo and the synchronization matrix; [PHASE3_TESTING.md](PHASE3_TESTING.md) for Settings/consent/sensor checks; and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/Doze/recovery procedures.
+
+## Implemented in Phase 4
+
+- Eligible Android 16 QPR1+ Live Update requests using standard ProgressStyle, tracker dot and native countdown, with the ordinary silent notification retained on Android 15 and earlier. Configured fade/extend changes refresh the presentation; dismissal survives controller recreation and rejects stale revisions.
+- Reactive Quick Settings tile with active/off state, localized remaining minutes, run-bound cancellation and stale-idle start protection. API 37 starts through a resumed transparent Activity as the conservative while-in-use path; actual hardening behavior remains unverified.
+- Responsive Dial and Presets Glance widgets, theme/dynamic-color roles, native host chronometer, connected preset targets, ring renders on state/minute updates, zero periodic provider updates, and both widget choices in Settings. Versioned Glance state rejects stale process/boot data in favor of the initialized engine.
+- Generated Android 15+ previews and visually reviewed light/dark static fallbacks for both widgets. Four native rendering regressions compare actual preview RemoteViews against those fallback images.
+- Validated Start 30 min, Start 60 min and Custom time shortcuts targeting the correct package variant. MainActivity uses singleTop for repeated intent delivery, with Activity-retained UI events. Existing adaptive/themed moon icon layers are verified.
+- Engine-owned replacement Undo restores a still-future previous deadline under a new run ID; changed/expired/stale replacements are rejected. Idle-only widget starts are checked inside the actor. A last-duration preference-write failure no longer prevents scheduling a durable timer.
+- Application surface refreshes for run/settings changes, time/zone/locale/configuration changes and screen-on. The native widget chronometer supplies seconds without per-second app updates. Actual launcher latency remains a device measurement.
+- Pinned AGP **9.5.1** and checksum-verified Gradle **9.9.0**, both exercised with the existing JDK 17. No SDK/JDK/emulator/global CLI installation or shell-profile change occurred.
+
+## Current verification — Phase 4
+
+Commands used command-local JAVA_HOME for the existing JDK 17.0.20.1.
+
+| Check | Observed result |
+|---|---|
+| `./gradlew verifyFoundation :feature:home:verifyRoborazziDebug :feature:settings:verifyRoborazziDebug --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 10 s; 936 tasks, 26 executed / 910 up-to-date |
+| All host test XML, including pure-model JVM tests | **191 passed**, zero failures/errors/skips |
+| Image regressions, included in the host test coverage | **9 passed**: Home 3, Settings 2, native widget previews 4 |
+| Required quality checks | Debug assembly, unit tests, Android Lint, Spotless/ktlint, detekt and build-logic checks pass through verifyFoundation |
+| Connected phone | Current debug APK installed; idle Home visually inspected; **3/3 repeated Custom launches** opened and dismissed the sheet; no run left active |
+| Final debug APK permissions | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; promoted-notification permission present |
+| SDK local path | local.properties remains ignored and untracked |
+| Device-only surface gates | Tile/widget pinning and synchronization latency, launcher shortcut/Undo interaction, generated picker previews and API 36.1/37 promotion/hardening **pending** |
+
+The phone exposed repeated Custom launches that did not reach a standard Activity's new-intent callback. The singleTop fix was rebuilt, installed and verified with three repeated explicit launches after removing the temporary trace. Host manifest tests alone did not catch this delivery issue. No timer, permission grant, widget pin or tile addition was performed by this smoke check.
+
+Existing Home/Settings baselines were not rewritten. Widget light/dark fallbacks were rendered from the real widget views and visually reviewed against design/04-android-surfaces.png. No lint baseline or global analyzer threshold was relaxed. Existing test-helper deprecations and future Gradle 10 deprecation warnings remain.
+
+Phase 4 source commits: `b92447b` build-tool pins; `ccc86ed` timer safeguards and Undo; `2345e70` notifications/tile/widgets; `356ee32` app integration and shortcut delivery. Prior owner and phase commits are preserved.
 
 ## Implemented in Phase 3
 
@@ -21,7 +53,7 @@ See [PHASE3_TESTING.md](PHASE3_TESTING.md) for installation and every Settings/p
 - Supporting real QS tile and pin-capable Glance countdown widget so Settings has no inert Add row. State/minute refreshes and native host countdowns are connected. Full dial ring/responsiveness/previews, the presets widget, promoted notifications and shortcuts remain Phase 4.
 - Material 3 **1.5.0-rc01**, Navigation 3 **1.2.1**, UI Automator **2.4.1** verified against Google's Maven metadata/POMs on November 5. No SDK/JDK/emulator/global CLI installation occurred.
 
-## Current verification — Phase 3
+## Historical Phase 3 verification
 
 Commands use the existing JDK 17 through command-local JAVA_HOME.
 
@@ -110,7 +142,7 @@ Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.d
 - A call/alarm deferral can hold a bounded two-hour wake lease with polling. Battery cost and callback refinement need hardening measurements. DND/Bedtime vibration behavior remains unverified on a device.
 - Home and complete Settings are implemented. Nightly background delivery, physical accessibility, screen-lock consent/work profiles, ordinary/wake-up sensor delivery and real shake false positives remain unverified. Vibration mode behavior and brightness/cold-start continuity need device checks. The shake-enabled final alarm currently uses the conservative five-minute window even on devices with a wake-up sensor or no accelerometer; battery optimization of that policy remains hardening work.
 - Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
-- Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation and a Phase 2 APK opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
+- Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation, Phase 2 and the current Phase 4 APK opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
 - Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
 
 ## Environment and repository
@@ -150,4 +182,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Connect the phone and follow PHASE3_TESTING.md, then collect the pending Phase 1 Spotify/Doze evidence. The next implementation phase is **Phase 4 System surfaces**, after the owner's next continuation. Do not silently claim physical gates passed.
+Follow PHASE4_TESTING.md on the connected phone, alongside the pending Phase 1 Spotify/Doze and Phase 3 feature checks. The next implementation phase is **Phase 5 Hardening**, on the owner's next continuation. Carry every pending device gate into the full manual matrix; do not treat the limited phone smoke check as surface synchronization or playback reliability evidence.
