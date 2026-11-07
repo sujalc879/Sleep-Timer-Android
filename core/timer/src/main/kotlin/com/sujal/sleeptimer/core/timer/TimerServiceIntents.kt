@@ -21,6 +21,7 @@ object TimerServiceIntents {
     const val SOURCE = "source"
     const val WHILE_IN_USE = "while_in_use"
     const val EXPECTED_RUN = "expected_run"
+    const val ONLY_IF_IDLE = "only_if_idle"
     const val DELTA = "delta_millis"
 
     fun base(context: Context, action: String): Intent = Intent(context, TimerService::class.java).setAction(action)
@@ -58,7 +59,13 @@ object TimerServiceIntents {
         val duration = intent.getLongExtra(DURATION, -1)
         if (duration !in TimerLimits.MINUTE..TimerLimits.MAX_DURATION) return null
         val source = StartSource.entries.firstOrNull { it.name == intent.getStringExtra(SOURCE) } ?: return null
-        return TimerCommand.Start(duration, source, intent.getBooleanExtra(WHILE_IN_USE, false), id)
+        return TimerCommand.Start(
+            duration,
+            source,
+            intent.getBooleanExtra(WHILE_IN_USE, false),
+            id,
+            intent.getBooleanExtra(ONLY_IF_IDLE, false),
+        )
     }
 
     private fun validDelta(intent: Intent): Long? =

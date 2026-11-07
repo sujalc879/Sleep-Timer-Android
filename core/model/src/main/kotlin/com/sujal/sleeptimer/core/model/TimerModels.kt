@@ -138,7 +138,9 @@ sealed interface TimerCommand {
         val source: StartSource,
         val hasWhileInUse: Boolean,
         val commandId: String,
+        val onlyIfIdle: Boolean = false,
     ) : TimerCommand
+    data class UndoReplacement(val expectedRunId: String, val commandId: String) : TimerCommand
     data class Stop(val commandId: String, val expectedRunId: String? = null) : TimerCommand
     data class Extend(val deltaMillis: Long, val commandId: String, val expectedRunId: String? = null) : TimerCommand
     data class Reduce(val deltaMillis: Long, val commandId: String, val expectedRunId: String? = null) : TimerCommand

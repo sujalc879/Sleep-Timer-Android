@@ -26,16 +26,22 @@ class TimerGateway @Inject constructor(
     private val diagnostics: Diagnostics,
     @TimerAppScope private val scope: CoroutineScope,
 ) {
-    fun startFromVisibleActivity(durationMillis: Long, commandId: String = UUID.randomUUID().toString()): Boolean {
+    fun startFromVisibleActivity(
+        durationMillis: Long,
+        commandId: String = UUID.randomUUID().toString(),
+        source: StartSource = StartSource.ACTIVITY,
+        onlyIfIdle: Boolean = false,
+    ): Boolean {
         if (!capabilities.activityVisible ||
             durationMillis !in TimerLimits.MINUTE..TimerLimits.MAX_DURATION
         ) {
             return false
         }
-        val command = TimerCommand.Start(durationMillis, StartSource.ACTIVITY, true, commandId)
+        val command = TimerCommand.Start(durationMillis, source, true, commandId, onlyIfIdle)
         val intent = TimerServiceIntents.base(context, TimerServiceIntents.START)
             .putExtra(TimerServiceIntents.DURATION, durationMillis)
-            .putExtra(TimerServiceIntents.SOURCE, StartSource.ACTIVITY.name)
+            .putExtra(TimerServiceIntents.SOURCE, source.name)
+            .putExtra(TimerServiceIntents.ONLY_IF_IDLE, onlyIfIdle)
             .putExtra(TimerServiceIntents.WHILE_IN_USE, true)
             .putExtra(TimerServiceIntents.COMMAND_ID, commandId)
         return deliver(intent, command)

@@ -103,16 +103,11 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
 
 @Suppress("ReturnCount") // Fail closed at each command validation boundary.
 internal suspend fun EngineRuntime.handleCommand(command: TimerCommand): CommandResult {
-    val id = command.deliveryId()
-    if (id != null &&
-        !validCommandId(id)
-    ) {
-        return CommandResult(false, "Invalid command")
-    }
-    if (id != null && id in snapshot.acceptedCommandIds) return CommandResult(false, "Duplicate command")
+    commandRejection(command)?.let { return it }
     return when (command) {
         is TimerCommand.SelectDuration -> selectDuration(command)
-        is TimerCommand.Start -> start(command.durationMillis, command.source, command.hasWhileInUse, command.commandId)
+        is TimerCommand.Start -> startCommand(command)
+        is TimerCommand.UndoReplacement -> undoReplacement(command)
         is TimerCommand.StartTest -> startTest(command)
         is TimerCommand.Stop -> cancelTimer(command)
         is TimerCommand.Extend -> adjust(command.deltaMillis, command.commandId, command.expectedRunId, extend = true)
@@ -173,8 +168,11 @@ internal suspend fun EngineRuntime.start(
             needsAlarmReconcile = true,
         ),
     )
+    replacementUndo = old.run?.takeIf {
+        source == StartSource.SHORTCUT && !it.isTest && old.phase in setOf(TimerPhase.RUNNING, TimerPhase.FADING)
+    }?.let { ReplacementUndo(it, old.selectedDurationMillis, run.id, snapshot.scheduleGeneration, now) }
     old.run?.let { alarms.cancel(it.id, old.scheduleGeneration) }
-    if (!test) settingsStore.update { it.copy(lastDurationMillis = duration) }
+    if (!test) rememberDuration(duration)
     activatePlan(previous, recoverFade = inheritedFade != null, allowPlayingRecovery = true)
     return CommandResult(true)
 }

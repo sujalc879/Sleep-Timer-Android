@@ -71,8 +71,13 @@ class TimerService : Service() {
             }
         serviceScope.launch {
             settingsStore.data.collect {
+                val changed = preferences.fadeMillis != it.fadeMillis || preferences.extendMillis != it.extendMillis
                 preferences = it
+                notifications.settingsChanged(it)
                 updateSensors()
+                if (changed && capabilities.foregroundServiceActive && engine.state.value.snapshot.isActive) {
+                    notifications.refresh(engine.state.value, stateChanged = true)
+                }
             }
         }
         serviceScope.launch {
@@ -141,7 +146,10 @@ class TimerService : Service() {
 
     private fun markWhileInUse(command: TimerCommand?) {
         val fromVisibleStart =
-            command is TimerCommand.Start && command.source == StartSource.ACTIVITY && command.hasWhileInUse
+            command is TimerCommand.Start &&
+                command.source in
+                setOf(StartSource.ACTIVITY, StartSource.SHORTCUT, StartSource.WIDGET, StartSource.TILE) &&
+                command.hasWhileInUse
         val fromVisibleTest = command is TimerCommand.StartTest && command.hasWhileInUse
         if (capabilities.activityVisible || fromVisibleStart ||
             fromVisibleTest
@@ -166,7 +174,8 @@ class TimerService : Service() {
                 updateSensors()
                 val snapshot = state.snapshot
                 val run = snapshot.run
-                val presentation = "${run?.id}:${snapshot.phase}:${run?.endElapsed}:${state.degradedReason}"
+                val presentation = "${run?.id}:${snapshot.phase}:${run?.endElapsed}:${state.degradedReason}:" +
+                    "${preferences.fadeMillis}:${preferences.extendMillis}"
                 if (snapshot.isActive && presentation != lastPresentation) {
                     lastPresentation = presentation
                     notifications.refresh(state, stateChanged = true)

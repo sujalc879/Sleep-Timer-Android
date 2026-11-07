@@ -44,6 +44,66 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TimerEngineCommandTest {
+    @Test fun rememberingDurationFailureCannotPreventSchedulingOrStopping() = runTest {
+        val f = fixture(durationPreferenceFailure = true)
+        f.start(TimerLimits.MINUTE)
+        assertThat(f.alarms.plans).isNotEmpty()
+        advanceTimeBy(TimerLimits.MINUTE)
+        runCurrent()
+        assertThat(f.playback.stopTimes).containsExactly(TimerLimits.MINUTE)
+        assertThat(f.snapshot.phase).isEqualTo(TimerPhase.FINISHED)
+        f.engine.close()
+    }
+
+    @Test fun shortcutUndoRestoresOriginalDeadlineAndRejectsStaleActions() = runTest {
+        val f = fixture()
+        f.start(45 * TimerLimits.MINUTE)
+        val original = f.snapshot.run!!
+        advanceTimeBy(TimerLimits.MINUTE)
+        f.send(TimerCommand.Start(60 * TimerLimits.MINUTE, StartSource.SHORTCUT, true, "shortcut"))
+        val replacement = f.snapshot.run!!
+        assertThat(f.send(TimerCommand.UndoReplacement(replacement.id, "undo")).accepted).isTrue()
+        assertThat(f.snapshot.run!!.endElapsed).isEqualTo(original.endElapsed)
+        assertThat(f.snapshot.run!!.id).isNotEqualTo(original.id)
+        assertThat(f.snapshot.run!!.id).isNotEqualTo(replacement.id)
+        assertThat(f.snapshot.selectedDurationMillis).isEqualTo(45 * TimerLimits.MINUTE)
+        assertThat(f.send(TimerCommand.Stop("old-stop", replacement.id)).accepted).isFalse()
+        assertThat(f.send(TimerCommand.UndoReplacement(replacement.id, "again")).accepted).isFalse()
+        f.engine.close()
+    }
+
+    @Test fun anIdleOnlyWidgetStartCannotReplaceARunAndAdjustedReplacementCannotBeUndone() = runTest {
+        val f = fixture()
+        f.start()
+        val original = f.snapshot.run!!.id
+        val start = TimerCommand.Start(
+            TimerLimits.DEFAULT_DURATION,
+            StartSource.WIDGET,
+            true,
+            "stale-widget",
+            onlyIfIdle = true,
+        )
+        assertThat(f.send(start).accepted).isFalse()
+        assertThat(f.snapshot.run!!.id).isEqualTo(original)
+        f.send(TimerCommand.Start(TimerLimits.DEFAULT_DURATION, StartSource.SHORTCUT, true, "shortcut"))
+        val replacement = f.snapshot.run!!.id
+        f.send(TimerCommand.Extend(TimerLimits.MINUTE, "extend", replacement))
+        assertThat(f.send(TimerCommand.UndoReplacement(replacement, "undo")).accepted).isFalse()
+        f.engine.close()
+    }
+
+    @Test fun undoCannotResurrectAnExpiredPreviousDeadline() = runTest {
+        val f = fixture()
+        f.start(TimerLimits.MINUTE)
+        advanceTimeBy(55 * TimerLimits.SECOND)
+        f.send(TimerCommand.Start(TimerLimits.DEFAULT_DURATION, StartSource.SHORTCUT, true, "shortcut"))
+        val replacement = f.snapshot.run!!.id
+        advanceTimeBy(6 * TimerLimits.SECOND)
+        assertThat(f.send(TimerCommand.UndoReplacement(replacement, "undo")).accepted).isFalse()
+        assertThat(f.snapshot.run!!.id).isEqualTo(replacement)
+        f.engine.close()
+    }
+
     @Test fun screenLocksAfterVerifiedStopButNeverDuringTestOrCancellation() = runTest {
         val f = fixture(preferences = AppSettings(screenOff = true))
         f.start(TimerLimits.MINUTE)
@@ -487,6 +547,7 @@ private fun TestScope.fixture(
     loadFailure: Boolean = false,
     forceStopped: Boolean = false,
     preferences: AppSettings = AppSettings(),
+    durationPreferenceFailure: Boolean = false,
 ): Fixture {
     val clock = FakeClock(testScheduler, boot, initialElapsed)
     val store = MemorySnapshots(saved, loadFailure)
@@ -497,7 +558,7 @@ private fun TestScope.fixture(
     val screenLocks = mutableListOf<Long>()
     val engine = TimerEngine(
         TimerDependencies(
-            clock, store, MemorySettings(preferences), alarms, wakes, feedback, playback,
+            clock, store, MemorySettings(preferences, durationPreferenceFailure), alarms, wakes, feedback, playback,
             Diagnostics {
             },
             RecoveryInspector { forceStopped },
@@ -554,9 +615,11 @@ private class MemorySnapshots(var value: TimerSnapshot, private val failLoad: Bo
     }
 }
 
-private class MemorySettings(initial: AppSettings = AppSettings()) : SettingsStore {
+private class MemorySettings(initial: AppSettings = AppSettings(), private val failUpdate: Boolean = false) :
+    SettingsStore {
     override val data = MutableStateFlow(initial)
     override suspend fun update(transform: (AppSettings) -> AppSettings): AppSettings {
+        if (failUpdate) throw IOException("preference-write-failure")
         data.value = transform(data.value)
         return data.value
     }

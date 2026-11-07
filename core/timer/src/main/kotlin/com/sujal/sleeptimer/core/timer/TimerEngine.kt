@@ -123,6 +123,7 @@ internal class EngineRuntime(
     val state: MutableStateFlow<TimerUiState>,
     var executionAllowed: Boolean,
 ) {
+    var replacementUndo: ReplacementUndo? = null
     val clock = ports.clock
     val store = ports.snapshotStore
     val settingsStore = ports.settingsStore

@@ -10,6 +10,7 @@ import javax.inject.Qualifier
 annotation class TimerAppScope
 
 interface TimerNotifications {
+    fun settingsChanged(settings: com.sujal.sleeptimer.core.model.AppSettings) {}
     fun foreground(state: TimerUiState): Notification
     fun refresh(state: TimerUiState, stateChanged: Boolean)
     fun completed(result: StopResult)
