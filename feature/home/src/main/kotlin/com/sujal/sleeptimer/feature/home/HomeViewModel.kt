@@ -23,16 +23,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -51,12 +47,7 @@ class HomeViewModel @Inject constructor(
     private val selection = MutableStateFlow<Long?>(null)
     private val permissions = MutableStateFlow(readPermissions(context))
     val messages = MutableSharedFlow<Int>(extraBufferCapacity = 1)
-    private val ticks = flow {
-        while (currentCoroutineContext().isActive) {
-            emit(clock.elapsedRealtime())
-            delay(DISPLAY_TICK)
-        }
-    }
+    private val ticks = elapsedDisplayTicks(clock)
     val state = combine(
         engine.state,
         settings.data.catch { error ->
@@ -209,9 +200,8 @@ class HomeViewModel @Inject constructor(
     }
 
     private companion object {
-        const val DISPLAY_TICK = 250L
         const val FINISHED_DURATION = 3_000L
-        const val SUBSCRIPTION_TIMEOUT = 5_000L
+        const val SUBSCRIPTION_TIMEOUT = 0L
     }
 }
 
