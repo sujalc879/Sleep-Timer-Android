@@ -2,15 +2,19 @@ package com.sujal.sleeptimer.feature.home
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.adaptive.HingeInfo
+import androidx.compose.material3.adaptive.Posture
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
@@ -61,6 +65,19 @@ class HomeUiTest {
         dial.performKeyInput { pressKey(Key.DirectionRight) }
         rule.runOnIdle { assertThat(state.durationMillis).isEqualTo(31 * TimerLimits.MINUTE) }
         dial.performSemanticsAction(SemanticsActions.SetProgress) { assertThat(it(Float.NaN)).isFalse() }
+        dial.performKeyInput { pressKey(Key.PageUp) }
+        rule.runOnIdle { assertThat(state.durationMillis).isEqualTo(36 * TimerLimits.MINUTE) }
+        dial.performKeyInput { pressKey(Key.PageDown) }
+        rule.runOnIdle { assertThat(state.durationMillis).isEqualTo(31 * TimerLimits.MINUTE) }
+        val actions = dial.fetchSemanticsNode().config[SemanticsActions.CustomActions]
+        assertThat(actions.map { it.label }).containsExactly(
+            "Add one minute",
+            "Remove one minute",
+            "Add five minutes",
+            "Remove five minutes",
+        )
+        rule.runOnIdle { assertThat(actions.single { it.label == "Add five minutes" }.action()).isTrue() }
+        rule.runOnIdle { assertThat(state.durationMillis).isEqualTo(36 * TimerLimits.MINUTE) }
         dial.performKeyInput { pressKey(Key.MoveEnd) }
         rule.runOnIdle { assertThat(state.durationMillis).isEqualTo(60 * TimerLimits.MINUTE) }
     }
@@ -132,6 +149,53 @@ class HomeUiTest {
         rule.onNodeWithContentDescription("Timer duration").assertIsDisplayed()
         rule.onNodeWithContentDescription("Start").assertIsDisplayed()
         rule.onNodeWithContentDescription("Nightly").assertIsDisplayed()
+    }
+
+    @Test
+    @Config(qualifiers = "w320dp-h640dp-mdpi")
+    fun twelveHourDialStaysWithinTheNarrowScreen() {
+        rule.setContent {
+            SleepTimerTheme(dynamicColor = false) {
+                HomeScreen(homeFixture().copy(durationMillis = TimerLimits.MAX_DURATION), homeActions(), {})
+            }
+        }
+        val bounds = rule.onNodeWithContentDescription("Timer duration").performScrollTo()
+            .fetchSemanticsNode().boundsInWindow
+        assertThat(bounds.left).isAtLeast(0f)
+        assertThat(bounds.right).isAtMost(320f)
+        val description = rule.onNodeWithContentDescription("Timer duration").fetchSemanticsNode()
+            .config[SemanticsProperties.StateDescription]
+        assertThat(description).startsWith("720 minutes.")
+    }
+
+    @Test
+    @Config(qualifiers = "w600dp-h900dp-mdpi")
+    fun tabletopKeepsDialAboveTheHingeAndControlsBelow() {
+        val posture = Posture(true, listOf(HingeInfo(Rect(0f, 440f, 600f, 460f), false, false, true, true)))
+        rule.setContent {
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(homeFixture(), homeActions(), {}, posture = posture) }
+        }
+        val dial = rule.onNodeWithContentDescription("Timer duration").performScrollTo().fetchSemanticsNode()
+        val start = rule.onNodeWithContentDescription("Start").performScrollTo().fetchSemanticsNode()
+        assertThat(dial.boundsInWindow.bottom).isAtMost(440f)
+        assertThat(start.boundsInWindow.top).isAtLeast(460f)
+    }
+
+    @Test
+    @Config(qualifiers = "w840dp-h900dp-mdpi")
+    fun separatingVerticalHingeIsAvoidedEvenWithRtl() {
+        val posture = Posture(false, listOf(HingeInfo(Rect(412f, 0f, 428f, 900f), true, true, true, true)))
+        rule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                SleepTimerTheme(dynamicColor = false) {
+                    HomeScreen(homeFixture(), homeActions(), {}, posture = posture)
+                }
+            }
+        }
+        val dial = rule.onNodeWithContentDescription("Timer duration").fetchSemanticsNode()
+        val start = rule.onNodeWithContentDescription("Start").fetchSemanticsNode()
+        assertThat(dial.boundsInWindow.right).isAtMost(412f)
+        assertThat(start.boundsInWindow.left).isAtLeast(428f)
     }
 }
 

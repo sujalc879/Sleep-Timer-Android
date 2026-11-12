@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.TextAutoSize
@@ -166,6 +167,7 @@ private fun DialText(presentation: DialPresentation) {
         } else {
             Text(
                 text = presentation.countdown,
+                modifier = Modifier.fillMaxWidth(),
                 style = TextStyle(fontSize = 72.sp, fontFeatureSettings = "tnum", letterSpacing = (-2).sp),
                 autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = 72.sp, stepSize = 1.sp),
                 maxLines = 1,

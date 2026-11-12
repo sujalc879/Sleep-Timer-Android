@@ -8,6 +8,8 @@ data class DialPresentation(
     val controlLabel: String,
     val increaseLabel: String,
     val decreaseLabel: String,
+    val increaseFiveLabel: String,
+    val decreaseFiveLabel: String,
     val running: Boolean = false,
     val progress: Float = 0f,
     val message: String? = null,

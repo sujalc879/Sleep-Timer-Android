@@ -73,6 +73,8 @@ internal fun HomeDial(state: HomeUiState, actions: HomeActions, modifier: Modifi
             controlLabel = stringResource(if (state.running) R.string.remaining_control else R.string.duration_control),
             increaseLabel = stringResource(R.string.increase_minute),
             decreaseLabel = stringResource(R.string.decrease_minute),
+            increaseFiveLabel = stringResource(R.string.increase_five_minutes),
+            decreaseFiveLabel = stringResource(R.string.decrease_five_minutes),
             running = state.running, progress = state.progress, message = message,
         ),
         actions.onMinutesChange,

@@ -30,6 +30,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                 targetCompatibility = JavaVersion.VERSION_17
             }
             testOptions.unitTests.isIncludeAndroidResources = true
+            buildTypes.configureEach { isPseudoLocalesEnabled = name == "debug" }
             lint {
                 warningsAsErrors = true
                 checkDependencies = true
@@ -56,6 +57,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
                 targetCompatibility = JavaVersion.VERSION_17
             }
             testOptions.unitTests.isIncludeAndroidResources = true
+            buildTypes.configureEach { isPseudoLocalesEnabled = name == "debug" }
             lint {
                 warningsAsErrors = true
                 checkDependencies = true

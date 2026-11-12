@@ -52,6 +52,16 @@ internal fun Modifier.dialInput(presentation: DialPresentation, update: (Int) ->
                         finish()
                         true
                     },
+                    CustomAccessibilityAction(presentation.increaseFiveLabel) {
+                        update(current.minutes + FIVE_MINUTES)
+                        finish()
+                        true
+                    },
+                    CustomAccessibilityAction(presentation.decreaseFiveLabel) {
+                        update(current.minutes - FIVE_MINUTES)
+                        finish()
+                        true
+                    },
                 )
             }
             .onKeyEvent { event ->
@@ -74,8 +84,12 @@ private fun KeyEvent.dialTarget(minutes: Int): Int? = if (type != KeyEventType.K
     when (key) {
         Key.DirectionUp, Key.DirectionRight -> minutes + 1
         Key.DirectionDown, Key.DirectionLeft -> minutes - 1
+        Key.PageUp -> minutes + FIVE_MINUTES
+        Key.PageDown -> minutes - FIVE_MINUTES
         Key.MoveHome -> 1
         Key.MoveEnd -> MINUTES_PER_TURN
         else -> null
     }
 }
+
+private const val FIVE_MINUTES = 5

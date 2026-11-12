@@ -90,4 +90,8 @@
     <string name="timer_replaced">Timer replaced</string>
     <string name="undo">Undo</string>
     <string name="undo_unavailable">The previous timer ended or the timer changed.</string>
+    <string name="increase_five_minutes">Add five minutes</string>
+    <string name="decrease_five_minutes">Remove five minutes</string>
+    <string name="timer_interrupted">Your timer was interrupted</string>
+    <string name="timer_interrupted_help">The previous timer could not finish. Check battery settings, then run a 10-second test.</string>
 </resources>

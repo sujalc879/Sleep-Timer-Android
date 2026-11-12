@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,12 +29,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.Posture
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -50,6 +59,7 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    posture: Posture = currentWindowAdaptiveInfoV2().windowPosture,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -61,26 +71,23 @@ fun HomeScreen(
                 CircularProgressIndicator()
             }
         } else {
-            HomeContent(state, actions, Modifier.fillMaxSize().padding(padding))
+            HomeContent(state, actions, posture, Modifier.fillMaxSize().padding(padding))
         }
     }
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
-    val adaptive = currentWindowAdaptiveInfoV2()
-    BoxWithConstraints(modifier) {
-        val wide =
-            maxWidth >= EXPANDED_WIDTH.dp || (maxHeight < COMPACT_HEIGHT.dp && !adaptive.windowPosture.isTabletop)
-        val largeFont = LocalDensity.current.fontScale >= LARGE_FONT_SCALE
-        val minimumHeight = if (wide) {
-            360.dp
-        } else if (largeFont) {
-            920.dp
-        } else {
-            660.dp
+private fun HomeContent(state: HomeUiState, actions: HomeActions, posture: Posture, modifier: Modifier = Modifier) {
+    var windowPosition by remember { mutableStateOf(Offset.Zero) }
+    BoxWithConstraints(modifier.onGloballyPositioned { windowPosition = it.positionInWindow() }) {
+        val panes = posture.hingeList.firstNotNullOfOrNull {
+            hingePanes(Size(constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat()), windowPosition, it)
         }
-        val bodyHeight = maxOf(maxHeight, minimumHeight)
+        val wide =
+            maxWidth >= EXPANDED_WIDTH.dp ||
+                (maxHeight < COMPACT_HEIGHT.dp && maxWidth >= 480.dp && !posture.isTabletop)
+        val dialSize = minOf(306.dp, if (wide) (maxWidth - 56.dp) / 2 else maxWidth - 32.dp)
+        val bodyHeight = maxOf(maxHeight, minimumHomeHeight(wide, LocalDensity.current.fontScale >= LARGE_FONT_SCALE))
         val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<Rect>()
         val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
         SharedTransitionLayout(Modifier.fillMaxSize()) {
@@ -90,7 +97,7 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modi
                 transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
                 label = "timer-state",
             ) { running ->
-                val dialModifier = Modifier.size(306.dp).sharedBounds(
+                val dialModifier = Modifier.sharedBounds(
                     rememberSharedContentState("timer-dial"),
                     this,
                     boundsTransform = { _, _ -> spatial },
@@ -105,14 +112,26 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions, modifier: Modi
                 val content = current.fillMaxWidth().verticalScroll(
                     rememberScrollState(),
                 ).height(bodyHeight).padding(16.dp)
-                HomePanels(state, actions, running, wide, content, dialModifier, primaryModifier)
+                if (panes == null) {
+                    HomePanels(
+                        state,
+                        actions,
+                        running,
+                        wide,
+                        content,
+                        Modifier.size(dialSize).then(dialModifier),
+                        primaryModifier,
+                    )
+                } else {
+                    HingeHomePanels(state, actions, running, panes, current, primaryModifier, dialModifier)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StatusChips(state: HomeUiState, actions: HomeActions) {
+internal fun StatusChips(state: HomeUiState, actions: HomeActions) {
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AssistChip(
             onClick = actions.onReadiness,
@@ -162,9 +181,11 @@ private fun HomePanels(
             horizontalArrangement = Arrangement.spacedBy(24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (!running) StatusChips(state, actions)
-                HomeDial(state, actions, dialModifier)
+                BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    HomeDial(state, actions, Modifier.size(minOf(306.dp, maxWidth, maxHeight)).then(dialModifier))
+                }
             }
             Column(
                 Modifier.weight(1f).widthIn(max = 420.dp),
@@ -195,3 +216,10 @@ private fun HomePanels(
 private const val EXPANDED_WIDTH = 600
 
 private const val LARGE_FONT_SCALE = 1.5f
+
+private fun minimumHomeHeight(wide: Boolean, largeFont: Boolean) = when {
+    wide && largeFont -> 600.dp
+    wide -> 0.dp
+    largeFont -> 920.dp
+    else -> 660.dp
+}
