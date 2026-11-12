@@ -4,7 +4,7 @@ Planning date: 2026-11-03 (Asia/Kolkata).
 
 ## Scope and current gate
 
-The owner authorized **Phase 4 System surfaces**, now implemented and host-verified. Stop before Phase 5 Hardening. The physical surface-synchronization exit gate remains pending. Physical-device reliability evidence remains pending. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
+The owner authorized **Phase 5 Hardening** on November 12. Implementation and host checks are complete: recovery explanations, adaptive/RTL/input fixes, diagnostics and the full edge-case manual matrix. Stop before Phase 6 Release. Physical surface synchronization and playback reliability evidence remain pending. Runtime checks that were unavailable remain explicitly pending rather than being reported passed. See [PROGRESS.md](PROGRESS.md) for actual verification and the current handoff, and [DECISIONS.md](DECISIONS.md) for choices and platform corrections.
 
 The authority is [AGENTS.md](../AGENTS.md), with all four PNGs in [design](../design) visually inspected. The PDF duplicates those references. The product priority is reliable playback stopping, followed by safe volume handling, platform-native presentation, accessibility, and low battery use. A disconnected phone does not block implementation; unavailable runtime tests are reported as skipped.
 
@@ -181,3 +181,12 @@ The tile/widget Add rows require real components. Include a functioning tile and
 Complete Android surfaces from design/04-android-surfaces.png: promote eligible notifications on 36.1+ with the existing silent countdown fallback; finish the reactive tile and both Glance widgets, including native host countdown, minute-only ring renders, responsive layout, generated/static previews and theme/accessibility. Add adaptive monochrome icons and validated static shortcuts. All mutations remain serialized engine commands; shortcut replacement Undo must restore a still-valid previous deadline without allowing stale actions to affect another run.
 
 Refresh surfaces for real run/settings changes, wall-clock/zone/locale/theme changes and process restoration. Keep dismissal suppression durable enough for controller recreation, isolate widget/notification failures and avoid polling widgets each second. Use official documentation and pinned source APIs. Test adapters, action identities, widget layouts/previews and stale replacement behavior; run required checks and existing image comparisons. Do not install SDK/JDK/emulator components or wait for a phone. Record unavailable API 36.1/37 promotion and WIU/device synchronization checks as pending.
+
+
+## Phase 5 execution (authorized November 12)
+
+Read the full brief and all four design PNGs, then audit the existing recovery/resource ownership tests rather than replacing the engine. Add the specified local diagnostics share action in Settings Reliability, expose only the bounded internal event buffer and relative elapsed times, and keep sharing user initiated. Keep export generation in memory; no network, storage permission, app metadata or device identifier is needed.
+
+Complete dial Page Up/Down and ±5-minute accessibility actions with localized labels. Exercise narrow/large-font, RTL/pseudo-locales, landscape and tabletop presentation, fixing any reproduced layout or hinge issue. Audit process/reboot/late-stop and call/alarm resource safety; add regressions for actual gaps. Check OEM guidance coverage and pin currently verified dependency versions.
+
+Create docs/MANUAL_TEST_PLAN.md with stable case IDs covering every §6 bullet, explicit expected results, host test references and pending physical-device status. Include real-player/Doze, volume/route, call/alarm, DND, sensor, permission, surface, recovery and API/OEM procedures with cleanup for reversible adb changes. No SDK/JDK/emulator install is authorized. Run required quality and image checks; use a connected phone only when available and preserve active user timers. Record unmeasured device gates honestly and stop before release/performance work.

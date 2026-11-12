@@ -310,3 +310,48 @@ Sources: [official AGP module metadata](https://dl.google.com/dl/android/maven2/
 ## D045 — Repeated shortcut delivery and Activity UI ownership
 
 **Verified by phone tracing.** The first Custom launch was handled, but repeated task-front launches of the standard Activity produced no new-intent callback. Set MainActivity to `singleTop` so repeated launches reach `onNewIntent`, including the same action. Keep launch UI events Activity-retained rather than process-global: they survive rotation within an Activity and cannot be consumed by another Activity's UI. The timer engine/gateway remain process singletons. After removing the temporary trace, rebuilding and installing, three consecutive explicit Custom launches each opened and dismissed the real sheet on the Android 15 phone. Host manifest/input tests alone do not prove delivery; launcher presentation and fixed-start/Undo interaction remain device checks.
+
+
+## D046 — User-initiated local diagnostic sharing
+
+**Accepted for Phase 5.** Share a bounded plain-text report through Android's Sharesheet from Settings Reliability. Reuse a single process-local event ring for adapters and export; include event codes and relative elapsed durations, without wall-clock times, installed-player names, media metadata, device IDs or exception messages. No file provider, storage permission or network is needed for a small EXTRA_TEXT report. The report states that events are from this app process only; process death is covered by persisted timer results and the recovery inspector, not a claim of a durable diagnostic history. The user reviews/shares using the system chooser. API verified against [Android Sharesheet guidance](https://developer.android.com/develop/ui/compose/sharing/send).
+
+## D047 — Hardening evidence and completion boundary
+
+**Accepted.** Every brief §6 edge case receives a stable manual case ID and an automated test reference where coverage exists. A written procedure is coverage of the test plan, not a passed runtime test. The existing JDK 17 remains the approved host runtime; unavailable API 36.1/37, OEM, real shake traces, overnight and physical fade/restore results remain pending. Do not install tools or weaken lint to manufacture a pass.
+
+
+## D048 — November 12 dependency audit
+
+**Verified against official repository metadata.** Rechecked 33 catalog version references against Google Maven and Maven Central. Keep the existing stable pins and the required Material 3 1.5.0-rc01 exception; update kotlinx.serialization to **1.13.0** and Roborazzi to **1.79.0**, the two newer stable artifacts found. Required compilation, storage regressions and existing image verification gate these updates; do not regenerate established baselines to hide rendering changes.
+
+Sources: [serialization metadata](https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/maven-metadata.xml), [Roborazzi metadata](https://repo.maven.apache.org/maven2/io/github/takahirom/roborazzi/roborazzi/maven-metadata.xml), [AndroidX release table](https://developer.android.com/jetpack/androidx/versions).
+
+
+## D049 — Hinge coordinates, debug pseudo-locales and display cadence
+
+**Accepted after layout audit.** Adaptive 1.3.0's pinned source confirms Posture.hingeList bounds are in window coordinates. Convert them using the actual content position after Scaffold insets, then give dial and controls separate independently scrollable panes; use an absolute-left parent alignment plus physical offsets so RTL does not move content onto a physical hinge. A regression caught that offsets alone still allowed the parent to mirror the pane origin. Compact normal layouts bound the dial to the available pane width. Preserve the existing 390 dp design baselines.
+
+Enable generated pseudo-locales only in debug build types using the pinned AGP BuildType.isPseudoLocalesEnabled API. Test expanded/bidirectional text instead of treating layout direction alone as localization coverage. Dial Page Up/Down and TalkBack custom actions change five minutes through the same bounded selection path as dragging.
+
+Home's display flow now samples elapsed time once at the next whole-second boundary and stops collection immediately when no lifecycle subscriber remains. It never schedules expiry; the engine/alarm/wake model remains authoritative. Frame/recomposition performance still requires Phase 6 measurement.
+
+Sources: official [adaptive Posture reference](https://developer.android.com/reference/kotlin/androidx/compose/material3/adaptive/Posture) and the Google Maven adaptive-android 1.3.0 source archive; AGP 9.5.1's cached public BuildType interface.
+
+
+## D050 — Deliver recovered interruptions outside the foreground service
+
+**Accepted after finding a missed explanation.** Restored force-stop, boot mismatch and unsafe-late runs had an interrupted result with the default completion stamp. They could resolve before the service observer attached, leaving an idle screen with no alert or visible explanation. Stamp recovery results with the injected elapsed clock, retain the test flag consistently, and let the application surface observer deliver the silent interrupted alert without starting an otherwise unnecessary foreground service.
+
+Home keeps interruption in readiness and opens its explanation once per result, with the existing battery guidance action. An interrupted test uses that explanation instead of stacking the ordinary test-result dialog. Notification delivery stores the posted recovery identity so controller/process recreation does not repost a dismissed alert. When notification permission is absent, Home still explains the interruption. Host regressions cover restored stamps/test identity, initialization and duplicate UI delivery, and alert dismissal across controller recreation; actual reboot/force-stop behavior remains a device case.
+
+Diagnostics also record phase/deadline changes, outcome codes and the elapsed offset of the first playback attempt and initial verification. Those verification offsets precede the watchdog/restore cleanup; the final result timestamp must not be treated as the audible stop time. No run IDs, player names or media metadata are recorded.
+
+
+## D051 — Bound numeric text before native RTL autosizing
+
+**Verified by native text measurement.** The new ar-XB/130% screenshot showed small countdown digits. Its TextLayoutResult reported visual overflow even at the smallest auto-size, with a 54 px measured width inside an available 222 px column. Set the countdown Text to fill that bounded column before centering/auto-sizing. The same case then measured 222 px, reported no overflow and rendered large locale digits. Changing paragraph direction alone did not resolve the issue and is not part of the implementation.
+
+Each new Home screenshot also checks the native countdown layout for overflow, including a 12-hour value at 200% font scale. The decorative text remains excluded from accessibility; the dial retains its single range/state description. Established 390 dp images must still pass comparison. This is host rendering evidence, with physical TalkBack/font/display-size cases still pending.
+
+Reference: [Compose TextAutoSize](https://developer.android.com/reference/kotlin/androidx/compose/foundation/text/TextAutoSize).

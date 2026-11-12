@@ -1,14 +1,46 @@
 # Progress
 
-Last updated: 2026-11-07 (Asia/Kolkata).
+Last updated: 2026-11-12 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 4 System surfaces is implemented and host verification passes. Stop before Phase 5 Hardening.** The physical synchronization exit gate remains pending. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline. This is a development build, not a production-readiness claim.
+**Phase 5 Hardening is implemented and host verification passes. Stop before Phase 6 Release.** Every AGENTS.md §6 item has an automated reference or a manual case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md). Physical playback, background reliability and surface synchronization gates remain pending. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline. This remains a development build.
 
-The current debug APK is installed on the connected Moto g54 5G / Android 15 (API 35). Home opened and was visually inspected. After fixing repeated shortcut delivery, three consecutive explicit Custom shortcut launches each opened the real duration sheet and dismissed successfully. The phone was left idle, with no timer running. This does not validate launcher shortcut presentation, playback stopping or background reliability.
+No phone was connected during the Phase 5 environment check. The new APK was built locally and was not installed on a device in this phase. The last observed phone installation was Phase 4 on November 7: Moto g54 5G / Android 15, idle Home inspected and three repeated explicit Custom launches verified. That historical smoke check does not establish playback or background reliability.
 
-See [PHASE4_TESTING.md](PHASE4_TESTING.md) for notifications, tile, both widgets, shortcuts/Undo and the synchronization matrix; [PHASE3_TESTING.md](PHASE3_TESTING.md) for Settings/consent/sensor checks; and [PHASE1_TESTING.md](PHASE1_TESTING.md) for playback/Doze/recovery procedures.
+## Implemented in Phase 5
+
+- Settings → Reliability → **Share diagnostics** opens the Android Sharesheet with a bounded, process-local report. The report contains relative elapsed times and internal state/alarm/wake/playback event codes, without player names, media metadata, run IDs or device identifiers. Nothing is shared until the user chooses a target. No file, network or storage permission was added.
+- Fixed an interrupted-recovery explanation gap: force-stop, reboot/unknown boot and unsafe-late recovery results receive a real completion stamp and preserve the test flag. Home opens readiness once per interruption and retains the warning/battery fix; an application observer delivers a silent alert even when no timer service is needed. Posted recovery alerts are deduplicated across controller recreation. An interrupted test uses the explanation instead of stacking another result dialog.
+- Added physical hinge-aware panes, accounting for Scaffold's window origin and RTL parent alignment; tabletop separates dial/controls above/below the hinge. Narrow and compact landscape dial sizes respect available space. A native RTL text regression exposed an autosizing overflow; filling the bounded countdown column restores large locale digits without changing established design snapshots.
+- Completed dial keyboard Page Up/Down and TalkBack ±5-minute actions through the same bounded minute selection path. Debug builds generate en-XA/ar-XB resources. Added six reviewed native rendering cases for narrow/200% text, actual pseudo-locales/RTL, landscape and tabletop, with countdown overflow assertions.
+- Home's display ticker aligns to elapsed seconds and stops reading immediately when its lifecycle collection ends. It does not schedule expiry. OEM mapping coverage includes every requested manufacturer and the generic fallback; physical vendor settings remain manual cases.
+- Completed the §6 A–L manual matrix with stable case IDs, exact procedures, expected results, cleanup for ADB overrides and explicit pending evidence. Includes real players, Doze/overnight, volume/routes, calls/alarms, DND, sensors, permissions, process/boot/late recovery, surfaces, OEMs and accessibility.
+- Audited 33 catalog references against official Maven metadata on November 12. Updated serialization to **1.13.0** and Roborazzi to **1.79.0**; retained the required Material 3 **1.5.0-rc01** exception. No SDK/JDK/emulator/global CLI installation or shell-profile change occurred.
+
+## Current verification — Phase 5
+
+Commands used command-local JAVA_HOME for the existing JDK 17.0.20.1.
+
+| Check | Observed result |
+|---|---|
+| `./gradlew formatAll --console=plain` | **PASS** |
+| `./gradlew verifyFoundation :feature:home:verifyRoborazziDebug :feature:settings:verifyRoborazziDebug --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 20 s; 936 tasks, 88 executed / 848 up-to-date |
+| All host test XML, including pure-model JVM tests | **208 passed**, zero failures/errors/skips |
+| Image comparisons, included in host coverage | **15 passed**: Home 7, Settings 4, native widget previews 4 |
+| Required quality checks | Debug assembly, unit tests, Android Lint, Spotless/ktlint, detekt and build-logic checks pass through verifyFoundation |
+| New native images | Six reviewed; generated en-XA/ar-XB strings and explicit RTL geometry, 320/360/600 dp, font 1.0/1.3/2.0, light/dark subset, landscape/tabletop; established nine images unchanged |
+| Final debug APK permissions | No INTERNET, USE_EXACT_ALARM or REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; no new permission for diagnostics |
+| SDK local path | local.properties remains ignored and untracked |
+| Connected device / runtime gates | No device available; installation, real-player/Doze, long-run/OEM, TalkBack/sensors/DND and API 36.1/37 checks **pending** |
+
+Test breakdown: app 19; model 4; data 20; design system 5; playback 37; system 31; timer 42; Home 21; Settings 11; notification 6; tile 4; widget 8. JDK 17 Robolectric coverage uses APIs 26/31/35 where configured; it does not establish API 36.1/37 runtime behavior.
+
+The added checks caught and corrected RTL pane mirroring and native countdown overflow. Analyzer findings were refactored; no lint baseline, global threshold or established image was changed. The first new Settings capture needed an advancing test clock during LazyColumn scrolling; the final capture freezes only after scrolling settles. Temporary measurement output was removed. Existing test API and Gradle 10 deprecation warnings remain.
+
+For phone testing, use the commands below, then [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md). Existing targeted procedures remain in [PHASE4_TESTING.md](PHASE4_TESTING.md), [PHASE3_TESTING.md](PHASE3_TESTING.md) and [PHASE1_TESTING.md](PHASE1_TESTING.md). Phase 6 release/performance/signing work has not started.
+
+Phase 5 source commits: `c3a7642` dependency pins; `ee76c3e` diagnostics; `1b6a5b1` adaptive/input rendering; `a586b3d` display ticker; `00ad30d` recovery explanations; `3e39595` OEM guide coverage.
 
 ## Implemented in Phase 4
 
@@ -21,7 +53,7 @@ See [PHASE4_TESTING.md](PHASE4_TESTING.md) for notifications, tile, both widgets
 - Application surface refreshes for run/settings changes, time/zone/locale/configuration changes and screen-on. The native widget chronometer supplies seconds without per-second app updates. Actual launcher latency remains a device measurement.
 - Pinned AGP **9.5.1** and checksum-verified Gradle **9.9.0**, both exercised with the existing JDK 17. No SDK/JDK/emulator/global CLI installation or shell-profile change occurred.
 
-## Current verification — Phase 4
+## Historical verification — Phase 4
 
 Commands used command-local JAVA_HOME for the existing JDK 17.0.20.1.
 
@@ -138,11 +170,11 @@ Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.d
 - **Phase 1 device definition of done remains unmet:** the two-minute Spotify screen-off/forced-Doze stop within one second, actual fading and safe physical restore remain unmeasured. The app is not production-ready.
 - Native fade/restore currently require API 33+, one connected output matching the media-route prediction, observable media sessions and safe interruption state. Ambiguous routes and all API 26–32 skip volume changes. Ordinary phone/Bluetooth routes may therefore stop without fading. See [playback safety](../core/playback/README.md); do not claim universal fade support.
 - Foreground startup denial, exact-alarm revocation, sticky restart, real process death, reboot/update, force-stop, low memory, restricted bucket, OEM survival, long runs and actual wake-lock/battery behavior need runtime tests. Host tests cover the reducer and adapters only. `am kill` can leave an FGS process alive and is not automatically process-death evidence.
-- Android 15 force-stop inspection uses the current PID's startup history. Older versions lack that unambiguous flag; detection is incomplete there. Interrupted results are persisted; their complete in-app explanation belongs to the later UI/reliability flows.
+- Android 15 force-stop inspection uses the current PID's startup history. Older versions lack that unambiguous flag; detection is incomplete there. Interrupted results are persisted and now explained by Home readiness and a silent alert when allowed; older-platform force-stop identification remains incomplete.
 - A call/alarm deferral can hold a bounded two-hour wake lease with polling. Battery cost and callback refinement need hardening measurements. DND/Bedtime vibration behavior remains unverified on a device.
-- Home and complete Settings are implemented. Nightly background delivery, physical accessibility, screen-lock consent/work profiles, ordinary/wake-up sensor delivery and real shake false positives remain unverified. Vibration mode behavior and brightness/cold-start continuity need device checks. The shake-enabled final alarm currently uses the conservative five-minute window even on devices with a wake-up sensor or no accelerometer; battery optimization of that policy remains hardening work.
+- Home and complete Settings are implemented. Nightly background delivery, physical accessibility, screen-lock consent/work profiles, ordinary/wake-up sensor delivery and real shake false positives remain unverified. Vibration mode behavior and brightness/cold-start continuity need device checks. The shake-enabled final alarm currently uses the conservative five-minute window even on devices with a wake-up sensor or no accelerometer; battery cost and tuning of that conservative policy remain a pending device measurement.
 - Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
-- Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation, Phase 2 and the current Phase 4 APK opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
+- Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation, Phase 2 and Phase 4 APKs opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
 - Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
 
 ## Environment and repository
@@ -182,4 +214,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Follow PHASE4_TESTING.md on the connected phone, alongside the pending Phase 1 Spotify/Doze and Phase 3 feature checks. The next implementation phase is **Phase 5 Hardening**, on the owner's next continuation. Carry every pending device gate into the full manual matrix; do not treat the limited phone smoke check as surface synchronization or playback reliability evidence.
+Connect and authorize the phone, install the new debug APK, play media and run the 10-second test. Open Settings → Share diagnostics and review/cancel the chooser. Then record the two-minute screen-off/forced-Doze Spotify result and the remaining cases in MANUAL_TEST_PLAN.md. All physical cases start pending; the prior phone smoke check is not a playback or synchronization pass. The next implementation phase is **Phase 6 Release**, only after the owner continues; preserve unresolved device gates in that handoff.
