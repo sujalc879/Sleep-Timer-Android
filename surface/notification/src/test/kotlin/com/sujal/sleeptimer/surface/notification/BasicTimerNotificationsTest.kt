@@ -45,6 +45,28 @@ class BasicTimerNotificationsTest {
         }
     }
 
+    @Test fun recoveredInterruptionAlertsOnceAcrossControllerRecreation() = runTest {
+        fun factory() = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        val result = StopResult(StopStatus.INTERRUPTED, completedElapsed = 123)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        factory().completed(result)
+        assertThat(manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
+            .isEqualTo("Your timer was interrupted")
+        manager.cancelAll()
+        val recreated = factory()
+        recreated.completed(result)
+        assertThat(manager.activeNotifications).isEmpty()
+        recreated.completed(result.copy(completedElapsed = 124))
+        assertThat(manager.activeNotifications).hasLength(1)
+    }
+
     @Test fun dismissalSurvivesControllerRecreationAndOldRevisionsCannotHideANewerNotification() = runTest {
         fun factory() = BasicTimerNotifications(
             context,

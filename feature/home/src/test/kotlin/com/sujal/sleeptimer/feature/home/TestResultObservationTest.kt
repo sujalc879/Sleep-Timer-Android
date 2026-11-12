@@ -21,6 +21,28 @@ import org.robolectric.annotation.Config
 class TestResultObservationTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
+    @Test fun restoredInterruptionIsShownOnceAfterInitializationAndAgainOnlyForANewResult() {
+        val result = StopResult(StopStatus.INTERRUPTED, completedElapsed = 100)
+        var state by mutableStateOf(HomeUiState(currentResult = result, exactAlarmsAllowed = true))
+        var notices = 0
+        rule.setContent { ObserveInterruptedResult(state) { notices++ } }
+        rule.waitForIdle()
+        assertThat(notices).isEqualTo(0)
+        rule.runOnIdle { state = state.copy(initialized = true) }
+        rule.waitForIdle()
+        assertThat(notices).isEqualTo(1)
+        assertThat(state.needsAttention).isTrue()
+        rule.runOnIdle { state = state.copy(batteryUnrestricted = true) }
+        rule.waitForIdle()
+        assertThat(notices).isEqualTo(1)
+        rule.runOnIdle { state = state.copy(currentResult = result.copy(completedElapsed = 200)) }
+        rule.waitForIdle()
+        assertThat(notices).isEqualTo(2)
+        rule.runOnIdle { state = state.copy(runId = "new-run") }
+        rule.waitForIdle()
+        assertThat(state.interrupted).isFalse()
+    }
+
     @Test fun aNewRequestCannotDisplayThePreviousCompletedTestBeforeItsServiceStarts() {
         val old = StopResult(StopStatus.STOPPED, completedElapsed = 100, isTest = true)
         var state by mutableStateOf(HomeUiState(currentResult = old))

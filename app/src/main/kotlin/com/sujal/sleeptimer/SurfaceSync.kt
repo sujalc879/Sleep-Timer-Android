@@ -9,6 +9,7 @@ import android.service.quicksettings.TileService
 import androidx.core.content.ContextCompat
 import com.sujal.sleeptimer.core.model.Diagnostics
 import com.sujal.sleeptimer.core.model.SettingsStore
+import com.sujal.sleeptimer.core.model.StopStatus
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.isActive
 import com.sujal.sleeptimer.core.timer.TimerAppScope
@@ -27,6 +28,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -70,6 +73,11 @@ class SurfaceSync @Inject constructor(
             ) {
                 diagnostics.record("widget-preview-unavailable")
             }
+        }
+        scope.launch {
+            engine.state.map { state ->
+                state.snapshot.lastResult?.takeIf { state.initialized && it.status == StopStatus.INTERRUPTED }
+            }.distinctUntilChanged().filterNotNull().collect(notifications::completed)
         }
         scope.launch {
             var previousConfiguration = configuration.value

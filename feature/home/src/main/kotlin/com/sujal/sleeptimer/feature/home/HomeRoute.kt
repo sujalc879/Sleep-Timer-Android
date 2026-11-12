@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sujal.sleeptimer.core.model.AppSettings
+import com.sujal.sleeptimer.core.model.StopStatus
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.timer.SurfaceEvent
 import kotlinx.coroutines.flow.Flow
@@ -122,6 +123,7 @@ fun HomeRoute(
         awaitingTest = false
         testResult = show
     }, { sheet = HomeSheet.NONE })
+    ObserveInterruptedResult(state) { sheet = HomeSheet.READINESS }
     Box(modifier) {
         HomeScreen(
             state,
@@ -225,8 +227,23 @@ internal fun ObserveTestResult(
     LaunchedEffect(state.currentResult, state.running, awaitingTest, baseline) {
         val completion = state.currentResult?.takeIf { it.isTest && it.completedElapsed != baseline }
         if (awaitingTest && !state.running && completion != null) {
-            onResult(completion.status != com.sujal.sleeptimer.core.model.StopStatus.CANCELLED)
+            onResult(completion.status !in setOf(StopStatus.CANCELLED, StopStatus.INTERRUPTED))
         }
         if (state.running) onRunning()
+    }
+}
+
+@Composable
+internal fun ObserveInterruptedResult(state: HomeUiState, onInterrupted: () -> Unit) {
+    var shown by rememberSaveable { mutableStateOf<String?>(null) }
+    val result = state.currentResult
+    LaunchedEffect(state.initialized, state.interrupted, result) {
+        if (state.initialized && state.interrupted && result != null) {
+            val identity = "${result.completedElapsed}:${result.detail}:${result.isTest}"
+            if (shown != identity) {
+                shown = identity
+                onInterrupted()
+            }
+        }
     }
 }

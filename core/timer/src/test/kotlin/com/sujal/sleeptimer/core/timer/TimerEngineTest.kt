@@ -316,9 +316,12 @@ class TimerEngineRecoveryTest {
     @Test
     fun rebootAndUnknownBootIdentityDiscardPersistedElapsedDeadline() = runTest {
         for ((storedBoot, currentBoot) in listOf(7 to 8, -1 to -1)) {
-            val f = fixture(saved = savedRun().copy(bootCount = storedBoot), boot = currentBoot)
+            val saved = savedRun().let { it.copy(bootCount = storedBoot, run = it.run!!.copy(isTest = true)) }
+            val f = fixture(saved = saved, boot = currentBoot, initialElapsed = TimerLimits.SECOND)
             assertThat(f.snapshot.run).isNull()
             assertThat(f.snapshot.lastResult?.status).isEqualTo(StopStatus.INTERRUPTED)
+            assertThat(f.snapshot.lastResult?.completedElapsed).isEqualTo(TimerLimits.SECOND)
+            assertThat(f.snapshot.lastResult?.isTest).isTrue()
             assertThat(f.playback.stopTimes).isEmpty()
             assertThat(f.wakes.active).isEqualTo(0)
             f.engine.close()
@@ -327,10 +330,11 @@ class TimerEngineRecoveryTest {
 
     @Test
     fun forceStoppedRunDoesNotResumeOrStopPlaybackWhenAppIsReopened() = runTest {
-        val f = fixture(saved = savedRun(), forceStopped = true)
+        val f = fixture(saved = savedRun(), forceStopped = true, initialElapsed = TimerLimits.SECOND)
         assertThat(f.snapshot.isActive).isFalse()
         assertThat(f.snapshot.lastResult?.status).isEqualTo(StopStatus.INTERRUPTED)
         assertThat(f.snapshot.lastResult?.detail).contains("force-stopped")
+        assertThat(f.snapshot.lastResult?.completedElapsed).isEqualTo(TimerLimits.SECOND)
         assertThat(f.alarms.plans).isEmpty()
         assertThat(f.playback.stopTimes).isEmpty()
         assertThat(f.wakes.active).isEqualTo(0)
@@ -352,6 +356,7 @@ class TimerEngineRecoveryTest {
             val f =
                 fixture(saved = savedRun(end = TimerLimits.MINUTE), initialElapsed = elapsed, interactive = screenOn)
             assertThat(f.snapshot.lastResult?.status).isEqualTo(StopStatus.INTERRUPTED)
+            assertThat(f.snapshot.lastResult?.completedElapsed).isEqualTo(elapsed)
             assertThat(f.playback.stopTimes).isEmpty()
             f.engine.close()
         }

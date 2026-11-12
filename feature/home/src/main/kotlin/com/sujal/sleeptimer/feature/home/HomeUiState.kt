@@ -2,6 +2,7 @@ package com.sujal.sleeptimer.feature.home
 
 import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.StopResult
+import com.sujal.sleeptimer.core.model.StopStatus
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.TimerPhase
 import java.text.NumberFormat
@@ -28,11 +29,13 @@ data class HomeUiState(
     val degradedReason: String? = null,
 ) {
     val running: Boolean get() = runId != null
+    val interrupted: Boolean get() = !running && currentResult?.status == StopStatus.INTERRUPTED
     val displayMillis: Long get() = if (running) remainingMillis else durationMillis
     val criticalCount: Int get() = listOf(
         !exactAlarmsAllowed,
         degradedReason != null && exactAlarmsAllowed,
         settings.screenOffAdminRevoked,
+        interrupted,
     ).count { it }
     val needsAttention: Boolean get() = criticalCount > 0
 }

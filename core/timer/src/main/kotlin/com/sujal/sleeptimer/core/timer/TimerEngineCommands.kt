@@ -54,11 +54,7 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
                 phase = TimerPhase.FINISHED,
                 run = null,
                 needsAlarmReconcile = false,
-                lastResult = StopResult(
-                    StopStatus.INTERRUPTED,
-                    detail = "Timer cancelled when the app was force-stopped",
-                    isTest = run.isTest,
-                ),
+                lastResult = interruptedResult("Timer cancelled when the app was force-stopped", run),
             ),
             durable = false,
         )
@@ -72,7 +68,7 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
                 phase = TimerPhase.FINISHED,
                 run = null,
                 needsAlarmReconcile = false,
-                lastResult = StopResult(StopStatus.INTERRUPTED, detail = "Timer interrupted by restart"),
+                lastResult = interruptedResult("Timer interrupted by restart", run),
             ),
             durable = false,
         )
@@ -88,11 +84,7 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
                 phase = TimerPhase.FINISHED,
                 run = null,
                 needsAlarmReconcile = false,
-                lastResult = StopResult(
-                    StopStatus.INTERRUPTED,
-                    detail = "Your timer was interrupted",
-                    isTest = run.isTest,
-                ),
+                lastResult = interruptedResult("Your timer was interrupted", run),
             ),
             durable = false,
         )
@@ -100,6 +92,13 @@ internal suspend fun EngineRuntime.reconcileRestoredSnapshot() {
         commit(snapshot.copy(run = run.copy(hasWhileInUse = false), needsAlarmReconcile = true), durable = false)
     }
 }
+
+private fun EngineRuntime.interruptedResult(detail: String, run: TimerRun) = StopResult(
+    StopStatus.INTERRUPTED,
+    detail = detail,
+    completedElapsed = clock.elapsedRealtime(),
+    isTest = run.isTest,
+)
 
 @Suppress("ReturnCount") // Fail closed at each command validation boundary.
 internal suspend fun EngineRuntime.handleCommand(command: TimerCommand): CommandResult {

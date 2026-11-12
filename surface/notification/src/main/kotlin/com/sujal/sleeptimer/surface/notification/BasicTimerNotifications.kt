@@ -96,9 +96,27 @@ class BasicTimerNotifications(
         diagnostics.record("timer-notification-dismissed")
     }
 
+    @Synchronized
     override fun completed(result: StopResult) {
-        if (result.status == StopStatus.CANCELLED || result.status == StopStatus.DEFERRED) return
-        if (!result.isTest && result.status in setOf(StopStatus.STOPPED, StopStatus.NOTHING_PLAYING)) return
+        if (!shouldAlert(result)) return
+        val interruption = if (result.status == StopStatus.INTERRUPTED) {
+            "${result.completedElapsed}:${result.detail}:${result.isTest}"
+        } else {
+            null
+        }
+        if (interruption != null && dismissal.getString("interruption", null) == interruption) return
+        if (post(TimerNotificationIds.RESULT, resultNotification(result)) && interruption != null) {
+            dismissal.edit { putString("interruption", interruption) }
+        }
+    }
+
+    private fun shouldAlert(result: StopResult): Boolean = when (result.status) {
+        StopStatus.CANCELLED, StopStatus.DEFERRED -> false
+        StopStatus.STOPPED, StopStatus.NOTHING_PLAYING -> result.isTest
+        else -> true
+    }
+
+    private fun resultNotification(result: StopResult): Notification {
         val title = when (result.status) {
             StopStatus.STOPPED -> if (result.localOnly) R.string.local_player_stopped else R.string.player_stopped
             StopStatus.NOTHING_PLAYING -> R.string.nothing_playing
@@ -117,13 +135,12 @@ class BasicTimerNotifications(
 
             else -> context.getString(R.string.stop_failure_help)
         }
-        val notification = base(RESULT_CHANNEL)
+        return base(RESULT_CHANNEL)
             .setContentTitle(context.getString(title))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setAutoCancel(true)
             .build()
-        post(TimerNotificationIds.RESULT, notification)
     }
 
     override fun interrupted() {
@@ -230,15 +247,20 @@ class BasicTimerNotifications(
         FLAGS,
     )
 
-    private fun post(id: Int, notification: Notification) {
+    private fun post(id: Int, notification: Notification): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-            if (permission != PackageManager.PERMISSION_GRANTED) return
+            if (permission != PackageManager.PERMISSION_GRANTED) return false
         }
-        try {
+        return try {
             manager.notify(id, notification)
+            true
         } catch (_: SecurityException) {
             diagnostics.record("notification-permission-changed")
+            false
+        } catch (_: RuntimeException) {
+            diagnostics.record("notification-post-unavailable")
+            false
         }
     }
 

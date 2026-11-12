@@ -16,7 +16,7 @@
     <string name="test_no_playback">Play something and try the test again. Cast playback needs notification access.</string>
     <string name="stop_method">Stopped using %1$s</string>
     <string name="timer_interrupted">Your timer was interrupted</string>
-    <string name="open_app_to_resume">Open Sleep timer to check the timer.</string>
+    <string name="open_app_to_resume">Open Sleep timer to check battery settings and run a 10-second test.</string>
     <string name="stop_failure_help">Try notification access and check battery settings. Some cast players cannot be verified.</string>
     <plurals name="minutes_left"><item quantity="one">%d min left</item><item quantity="other">%d min left</item></plurals>
     <string name="remaining_with_fade">%1$s · fades out over %2$d s</string>

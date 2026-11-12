@@ -94,6 +94,11 @@ private fun readinessResult(state: HomeUiState): Int = when (state.lastTest?.sta
 @Composable
 private fun ReadinessExtraRows(state: HomeUiState, onFix: (ReadinessFix) -> Unit) {
     Column {
+        if (state.interrupted) {
+            ReadinessRow(stringResource(R.string.timer_interrupted), stringResource(R.string.timer_interrupted_help)) {
+                onFix(ReadinessFix.BATTERY)
+            }
+        }
         if (state.degradedReason != null && state.exactAlarmsAllowed) {
             ReadinessRow(
                 stringResource(R.string.runtime_attention),
