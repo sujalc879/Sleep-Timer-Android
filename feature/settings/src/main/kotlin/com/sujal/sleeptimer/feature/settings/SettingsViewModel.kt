@@ -8,6 +8,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sujal.sleeptimer.core.model.AppSettings
+import com.sujal.sleeptimer.core.model.DiagnosticReport
 import com.sujal.sleeptimer.core.model.Diagnostics
 import com.sujal.sleeptimer.core.model.RuntimeCapabilities
 import com.sujal.sleeptimer.core.model.SettingsStore
@@ -39,6 +40,7 @@ class SettingsViewModel @Inject constructor(
     private val feedback: TimerFeedback,
     private val capabilities: RuntimeCapabilities,
     diagnostics: Diagnostics,
+    private val diagnosticReport: DiagnosticReport,
 ) : ViewModel() {
     val locker = AndroidScreenLocker(context, diagnostics)
     val messages = MutableSharedFlow<Int>(extraBufferCapacity = 1)
@@ -79,6 +81,8 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun preview(mode: WarningMode) = feedback.warning(mode)
+
+    fun diagnostics(): String = diagnosticReport.report()
 
     fun refresh() {
         access.value++

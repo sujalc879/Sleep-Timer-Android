@@ -105,6 +105,18 @@ class SettingsUiTest {
         assertThat(tests).isEqualTo(0)
     }
 
+    @Test fun diagnosticsIsReachableAndInvokesTheUserInitiatedShareAction() {
+        var shares = 0
+        rule.setContent {
+            SleepTimerTheme(dynamicColor = false) {
+                SettingsScreen(SettingsUiState(), settingsActions(diagnostics = { shares++ }), {})
+            }
+        }
+        rule.onNode(hasScrollToIndexAction()).performScrollToNode(hasText("Share diagnostics"))
+        rule.onNodeWithText("Share diagnostics").assertIsDisplayed().performClick()
+        assertThat(shares).isEqualTo(1)
+    }
+
     @Test fun extensionPickerExposesAllSupportedDurations() {
         var selected = 0
         rule.setContent {
@@ -123,4 +135,5 @@ internal fun settingsActions(
     change: ((AppSettings) -> AppSettings) -> Unit = {},
     sessions: () -> Unit = {},
     test: () -> Unit = {},
-): SettingsActions = SettingsActions(change, {}, {}, test, {}, {}, {}, {}, {}, sessions)
+    diagnostics: () -> Unit = {},
+): SettingsActions = SettingsActions(change, {}, {}, test, {}, {}, {}, {}, {}, sessions, diagnostics)

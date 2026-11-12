@@ -51,6 +51,10 @@ fun interface Diagnostics {
     fun record(event: String)
 }
 
+fun interface DiagnosticReport {
+    fun report(): String
+}
+
 enum class Interruption { NONE, CALL, ALARM, UNKNOWN }
 
 data class VolumeState(val index: Int, val minimum: Int, val maximum: Int, val fixed: Boolean, val route: OutputRoute?)

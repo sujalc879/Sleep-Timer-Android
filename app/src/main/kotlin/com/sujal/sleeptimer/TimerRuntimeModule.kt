@@ -2,7 +2,6 @@ package com.sujal.sleeptimer
 
 import android.content.ComponentName
 import android.content.Context
-import android.util.Log
 import com.sujal.sleeptimer.core.data.JsonSettingsStore
 import com.sujal.sleeptimer.core.data.JsonSnapshotStore
 import com.sujal.sleeptimer.core.model.AlarmScheduler
@@ -22,7 +21,6 @@ import com.sujal.sleeptimer.core.system.AndroidClock
 import com.sujal.sleeptimer.core.system.AndroidRecoveryInspector
 import com.sujal.sleeptimer.core.system.AndroidTimerFeedback
 import com.sujal.sleeptimer.core.system.AndroidWakeLocks
-import com.sujal.sleeptimer.core.system.LocalDiagnostics
 import com.sujal.sleeptimer.core.timer.TimerAlarmReceiver
 import com.sujal.sleeptimer.core.timer.TimerAppScope
 import com.sujal.sleeptimer.core.timer.TimerDependencies
@@ -43,15 +41,6 @@ import kotlinx.coroutines.SupervisorJob
 @Module
 @InstallIn(SingletonComponent::class)
 object TimerRuntimeModule {
-    @Provides @Singleton
-    fun diagnostics(): Diagnostics {
-        val memory = LocalDiagnostics()
-        return Diagnostics { event ->
-            memory.record(event)
-            if (BuildConfig.DEBUG) Log.d("SleepTimer", event)
-        }
-    }
-
     @Provides @Singleton @TimerAppScope
     fun appScope(diagnostics: Diagnostics): CoroutineScope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, error ->

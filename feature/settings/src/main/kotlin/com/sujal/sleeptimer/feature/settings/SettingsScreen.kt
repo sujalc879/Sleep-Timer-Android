@@ -206,9 +206,17 @@ private fun LazyListScope.reliabilitySettings(state: SettingsUiState, actions: S
             R.string.sessions,
             SleepTimerSymbol.NOTIFICATIONS,
             actions.sessions,
-            last = true,
             supporting = stringResource(R.string.sessions_support),
             value = stringResource(status),
+        )
+    }
+    item {
+        SettingLink(
+            R.string.diagnostics,
+            SleepTimerSymbol.SHARE,
+            actions.diagnostics,
+            last = true,
+            supporting = stringResource(R.string.diagnostics_support),
         )
     }
     if (state.adminActive) {

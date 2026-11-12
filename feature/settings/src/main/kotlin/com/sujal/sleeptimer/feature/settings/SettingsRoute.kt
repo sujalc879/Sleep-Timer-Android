@@ -104,6 +104,7 @@ fun SettingsRoute(
                 widget = { dialog = SettingsDialog.WIDGET_PICKER },
                 extend = { dialog = SettingsDialog.EXTEND }, warning = { dialog = SettingsDialog.WARNING },
                 battery = { dialog = SettingsDialog.BATTERY }, sessions = { dialog = SettingsDialog.SESSIONS },
+                diagnostics = { open(diagnosticsShareIntent(viewModel.diagnostics())) },
             ),
             onBack,
         )

@@ -26,6 +26,7 @@ enum class SleepTimerSymbol(internal val drawable: Int) {
     TIMER(R.drawable.ic_timer),
     VIBRATION(R.drawable.ic_vibration),
     MORE(R.drawable.ic_more_horiz),
+    SHARE(R.drawable.ic_share),
 }
 
 @Composable

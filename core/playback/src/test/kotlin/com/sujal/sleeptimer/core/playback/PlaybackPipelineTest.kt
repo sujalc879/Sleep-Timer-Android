@@ -55,6 +55,8 @@ class PlaybackPipelineTest {
         assertThat(result.method).isEqualTo(StopMethod.AUDIO_FOCUS)
         assertThat(fixture.backend.keyCalls).isEqualTo(0)
         assertThat(fixture.backend.abandonedAt).hasSize(1)
+        assertThat(fixture.diagnostics).contains("playback_attempt_late_ms:-60000")
+        assertThat(fixture.diagnostics).contains("playback_verification:STOPPED:late_ms=-60000")
     }
 
     @Test

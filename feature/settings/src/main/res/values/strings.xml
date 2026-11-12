@@ -60,4 +60,6 @@
     <plurals name="minutes"><item quantity="one">%d minute</item><item quantity="other">%d minutes</item></plurals>
     <string name="widget_dial">Dial widget</string>
     <string name="widget_presets">Presets widget</string>
+    <string name="diagnostics">Share diagnostics</string>
+    <string name="diagnostics_support">Share local timer events; no player names or media details</string>
 </resources>

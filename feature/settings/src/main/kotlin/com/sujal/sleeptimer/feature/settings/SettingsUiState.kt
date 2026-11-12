@@ -24,4 +24,5 @@ data class SettingsActions(
     val warning: () -> Unit,
     val battery: () -> Unit,
     val sessions: () -> Unit,
+    val diagnostics: () -> Unit,
 )

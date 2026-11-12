@@ -36,7 +36,11 @@ internal class PlaybackStopper(
             return result(StopStatus.NOTHING_PLAYING, detail = detail)
         }
         val firstAttempt = clock.elapsedRealtime()
+        diagnostics.record("playback_attempt_late_ms:${firstAttempt - run.endElapsed}")
         val stopped = attemptPipeline(run, token, probe, firstAttempt)
+        diagnostics.record(
+            "playback_verification:${stopped.status}:late_ms=${clock.elapsedRealtime() - run.endElapsed}",
+        )
         if (stopped.status != StopStatus.STOPPED || backend.isInteractive()) return stopped
         return watchdog(token, probe, stopped)
     }

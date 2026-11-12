@@ -224,6 +224,13 @@ internal class EngineRuntime(
             failure = "Timer state could not be saved"
             diagnostics.record("timer safety transition not persisted: ${error.javaClass.simpleName}")
         }
+        if (snapshot.phase != updated.phase || snapshot.run?.endElapsed != updated.run?.endElapsed) {
+            val remaining = updated.run?.let { (it.endElapsed - clock.elapsedRealtime()).coerceAtLeast(0) } ?: 0
+            diagnostics.record("timer_state:${updated.phase}:remaining_ms=$remaining")
+        }
+        if (snapshot.lastResult != updated.lastResult) {
+            updated.lastResult?.let { diagnostics.record("timer_result:${it.status}:${it.method}") }
+        }
         snapshot = updated
         publish()
     }
