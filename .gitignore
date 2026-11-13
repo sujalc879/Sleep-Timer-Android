@@ -6,3 +6,9 @@
 .idea/
 .DS_Store
 captures/
+
+# Release signing material stays outside version control.
+*.jks
+*.keystore
+/keystore.properties
+**/__pycache__/
