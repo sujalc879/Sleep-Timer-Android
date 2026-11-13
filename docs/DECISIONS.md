@@ -355,3 +355,47 @@ Diagnostics also record phase/deadline changes, outcome codes and the elapsed of
 Each new Home screenshot also checks the native countdown layout for overflow, including a 12-hour value at 200% font scale. The decorative text remains excluded from accessibility; the dial retains its single range/state description. Established 390 dp images must still pass comparison. This is host rendering evidence, with physical TalkBack/font/display-size cases still pending.
 
 Reference: [Compose TextAutoSize](https://developer.android.com/reference/kotlin/androidx/compose/foundation/text/TextAutoSize).
+
+
+## D052 — Release evidence and tooling boundary
+
+**Accepted for Phase 6 preparation.** Continue with host-verifiable release work while the phone is disconnected. Build an unsigned optimized APK/AAB unless all externally supplied signing inputs are configured; never fall back to a debug key for production release. Preserve the current application ID/version as development candidate defaults until the owner confirms the permanent Play identity. Signing secrets, keystores, Play account actions and publishing are not created or performed by this task.
+
+Baseline-profile generation and macrobenchmarks use explicit connected-device tasks and a separate profileable target. They are build-time/test dependencies, not shipped runtime code. A normal host verification/release build must not start an emulator, download SDK components or wait for a device. No generated profile or budget pass is claimed without collecting it. Artifact ELF/ZIP alignment, dependency/permission inspection and host tests are evidence only for those checks, not a physical release smoke test or a measured cold-start/overnight pass.
+
+
+## D053 — Pinned profiling APIs and isolated test data
+
+**Verified against official documentation and Benchmark plugin 1.5.0 sources.** Apply the Baseline Profile consumer/producer plugin, retain manual connected-device generation, and save real app-filtered profiles into source control only after collection. The generated nonMinifiedRelease and benchmarkRelease targets use the separate com.sujal.sleeptimer.benchmark application ID and the local debug signing configuration. Production release has no debug-key fallback. The test modules self-instrument in their own process, as required by Macrobenchmark; they do not instrument the R8 target process or consume its obfuscated classes. Shared journey source is compiled into the two instrumentation APKs only, using AndroidSourceSet.kotlin (AGP 9 built-in Kotlin does not compile added Java-source directories as Kotlin).
+
+Startup compares no-profile and required-profile cold launches; frame journeys exercise dial drag, Settings scrolling and a visible running countdown/wave. Timers use 60 minutes so short performance runs cannot expire into another player's audio. Cancellation waits for idle Home and final instrumentation cleanup force-stops only the isolated benchmark package. The normal debug/release install and its settings are untouched by these journeys. English UI and an unlocked API 33+ phone are the documented profile-generation prerequisites.
+
+References: [Baseline Profile configuration](https://developer.android.com/topic/performance/baselineprofiles/configure-baselineprofiles), [Macrobenchmark setup](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview), [metrics](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-metrics), [built-in Kotlin sources](https://developer.android.com/build/migrate-to-built-in-kotlin). The pinned plugin source confirms disabled synthetic unit tests and manual generation defaults. AGP 9.5.1 task enumeration with --all currently realizes a Compose Preview task requiring disabled release unit tests; targeted build/verification commands are used, without weakening checks or re-enabling synthetic unit tests solely for previews.
+
+## D054 — Release verification, versioning and signing
+
+**Accepted.** Keep SemVer candidate versionName 0.1.0 and monotonically increasing positive versionCode 1 until a distribution version is explicitly chosen; allow validated sleepTimer.versionName/versionCode Gradle properties. All four SLEEP_TIMER signing environment inputs must be supplied together. Keep keys/passwords out of the repository, generated BuildConfig and logs; absent inputs produce unsigned release artifacts. Add ignore patterns for key material, not example keys.
+
+Use R8's optimized defaults and transitive generated/consumer retention rules; initial release assembly needs no blanket package keeps. Preserve mapping/configuration output and require an optimized, non-debuggable, non-profileable production APK with the permission allowlist. The standard-library artifact inspector checks APK/AAB native identity, 64-bit PT_LOAD alignment/congruence/file bounds, uncompressed APK native ZIP offsets and absence of known debug/benchmark DEX descriptors. Malformed/4 KB-only ELF regressions exercise rejection paths. APK ZIP alignment is also independently checked with Build Tools zipalign. AAB native inspection does not prove Play-generated APK ZIP alignment or 16 KB runtime execution; those remain distribution/device gates.
+
+verifyRelease performs host checks and permits unsigned/no-app-profile development candidates. verifyDistributionArtifacts additionally requires actual app profile source, packaged binary profiles and valid externally supplied signatures; it is an artifact gate, not an assertion of completed manual QA or Play approval. Dependency metadata was rechecked for all 34 catalog versions on November 13; no newer stable pins were found, retaining the Material 3 1.5-line exception.
+
+References: [R8 optimization](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization), [16 KB guidance](https://developer.android.com/guide/practices/page-sizes), [app signing](https://developer.android.com/studio/publish/app-signing). ELF inspection follows the ELF32/ELF64 program-header layout; device performance claims require traces, not byte inspection.
+
+
+## D055 — Isolate clock invalidations from Home layout
+
+**Accepted after the Phase 6 performance audit.** The one-second ViewModel stream still changed the whole Home state, invalidating the screen and its overlays. Keep that live stream for the dial, and expose a distinct layout projection excluding countdown/end-time/progress/brief finished-message fields. Route/sheets observe the projection; the dial reads the live State at its own composition boundary. The reduction control observes a derived boolean, changing only when remaining time crosses its five-minute boundary. User commands, settings/readiness, phase and run changes remain structural state changes.
+
+A Compose regression advances the live clock through the reduction boundary, checks the displayed countdown and disabled control, and verifies no parent screen recomposition. Existing native images must remain unchanged. This isolates dial updates and avoids unrelated per-second layout work; the brief's stricter text-only invalidation and real frame/CPU cost still need tracing on the physical benchmark target. Do not infer zero dropped frames or the startup budget from this host regression.
+
+Frame benchmarks explicitly kill/relaunch in setup without StartupMode.COLD: that mode kills the target after setup and would discard the prepared visible running screen. Cold-start timing uses StartupMode.COLD with launch inside measureBlock. All measured journeys use production logic in the isolated profileable package.
+
+
+## D056 — Gradle patch and physical phone launch helper
+
+**Verified November 13.** Release lint identified Gradle 9.9.1, outside the catalog's Maven version references. The official current-release endpoint and distribution checksum agree on d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228. Update the checksum-pinned project wrapper and exercise it with the existing JDK 17; this is a project build dependency, not an SDK/JDK/global tool installation. Do not suppress version lint. Java's initial distribution download and the wrapper task's URL probe timed out. Downloading from the official endpoints with curl produced the exact pinned hash; the approved wrapper cache was populated with that verified ZIP. The bootstrap JAR already matches the official 9.9.1 wrapper checksum (621008afc4f5d59357fcf06ffa644dd5aade5e091bdc363742710445f73cdaf8). Keep URL validation enabled and increase the network timeout to 60 seconds; verify the actual new wrapper runtime/build rather than treating the failed regeneration URL probe as a pass.
+
+Add scripts/run-phone.sh because repeated installDebug attempts failed at device discovery. It checks a selected physical device's authorization before building, resolves the existing local SDK/JDK, builds debug, then uses adb -s for both update installation and MainActivity launch. It preserves app data, grants no permissions and starts no timer. No-device and shell-syntax paths are host-testable; successful install/launch remains pending until a phone is authorized.
+
+Sources: [official current Gradle metadata](https://services.gradle.org/versions/current), [9.9.1 distribution checksum](https://services.gradle.org/distributions/gradle-9.9.1-bin.zip.sha256), [ELF program-header specification](https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch5.pheader.html), [Macrobenchmark scope API](https://developer.android.com/reference/kotlin/androidx/benchmark/macro/MacrobenchmarkScope).

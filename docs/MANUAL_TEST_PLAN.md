@@ -264,4 +264,4 @@ The full rendering matrix is 5 widths × 3 font scales × 2 themes × LTR/RTL/ps
 
 ## Release handoff
 
-Stop before Phase 6. Carry every pending/failed case forward with evidence. Performance, baseline profiles, R8/AAB/signing, 16 KB compatibility, download size, Play declarations and production application identity are Phase 6 work. An implementation and a complete test plan do not establish the unmeasured one-second, overnight, OEM, shake-trace or hearing-safety gates.
+Phase 6 host release preparation began November 13. Carry every pending/failed case forward with evidence. Use [RELEASE_TESTING.md](RELEASE_TESTING.md) for optimized artifacts, real profile collection, startup/frame measurements, 16 KB and signed-candidate smoke; use [PLAY_SUBMISSION.md](PLAY_SUBMISSION.md) for owner inputs and policy preparation. An implementation and a complete test plan do not establish the unmeasured one-second, overnight, OEM, shake-trace or hearing-safety gates.

@@ -4,7 +4,7 @@ Native Android sleep timer, built with Kotlin and Material 3 Expressive. The bui
 
 ## Current scope
 
-Phases 0–5 provide the timer engine/service, guarded playback stopping and volume handling, adaptive Home, Settings and consent flows, shake extension, optional screen locking/dimming, notifications, tile, widgets and shortcuts with replacement Undo. Hardening adds hinge/RTL/large-text fixes, interrupted-run explanations, local diagnostic sharing and a full edge-case test plan. Host build/quality checks, 208 tests and 15 image comparisons pass. The latest APK has not been installed on a phone; physical playback/Doze, surface latency, sensor, DND, API 36.1/37 and OEM gates remain pending. This is a development build.
+Phases 0–5 provide the timer engine/service, guarded playback stopping and volume handling, adaptive Home, Settings and consent flows, shake extension, optional screen locking/dimming, notifications, tile, widgets and shortcuts with replacement Undo. Hardening adds hinge/RTL/large-text fixes, interrupted-run explanations, local diagnostic sharing and a full edge-case test plan. Host build/quality checks, 209 host tests and 15 image comparisons pass. This task did not install the latest APK on a phone; physical playback/Doze, surface latency, sensor, DND, API 36.1/37 and OEM gates remain pending. Phase 6 release preparation adds optimized artifact checks, connected-device profiling/benchmarks and a draft Play handoff; release readiness still requires the pending device/profile/signing/performance gates. This is a development build.
 
 See [docs/PROGRESS.md](docs/PROGRESS.md) for observed validation results and pending runtime checks, [docs/PLAN.md](docs/PLAN.md) for the phase sequence, and [docs/DECISIONS.md](docs/DECISIONS.md) for engineering choices.
 
@@ -36,7 +36,13 @@ Host navigation tests run on Robolectric APIs 26 and 35 with JDK 17. Robolectric
 
 ## Phone testing
 
-After a successful debug build, install on an emulator or a connected phone:
+For a connected and authorized phone, build, install and open the normal debug app with:
+
+```sh
+./scripts/run-phone.sh
+```
+
+The helper uses the existing SDK/JDK and checks device authorization before building. For an emulator or direct Gradle installation:
 
 ```sh
 ./gradlew :app:installDebug
@@ -47,3 +53,10 @@ Start with the complete [manual test plan](docs/MANUAL_TEST_PLAN.md), which reco
 For navigation/appearance, tap the tune action to open **Settings**, and return using the Back arrow and system Back. Rotate on each screen, repeat with the largest font setting and both system light/dark themes, then cold-launch in dark mode to inspect splash continuity. Android 12+ uses wallpaper colors. Android 8–11 uses the generated fallback palette. Check gesture and three-button navigation insets where available.
 
 The development package is `com.sujal.sleeptimer.debug`; its APK is `app/build/outputs/apk/debug/app-debug.apk`. Production package identity and signing remain release inputs. No device connection is needed for the host build. No emulator, SDK, JDK or device installation is performed automatically by the project.
+
+
+## Release preparation
+
+With Python 3.9+ available, run `./gradlew verifyRelease` for host quality/image checks, optimized APK/AAB assembly, release lint and artifact inspection. Nine additional Python artifact-verifier tests pass. Signing is optional for this development candidate. `verifyDistributionArtifacts` additionally requires generated app-profile source and external upload signing; it does not replace device QA or publish anything.
+
+See [release testing](docs/RELEASE_TESTING.md) for real connected-device profile/benchmark commands, budget evidence and optimized smoke tests, and [Play submission](docs/PLAY_SUBMISSION.md) for signing/version inputs, privacy/disclosure copy, listing/rollout plans and required owner decisions. No app-specific profile or physical performance result has been collected yet.

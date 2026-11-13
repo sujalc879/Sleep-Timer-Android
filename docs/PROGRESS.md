@@ -1,12 +1,51 @@
 # Progress
 
-Last updated: 2026-11-12 (Asia/Kolkata).
+Last updated: 2026-11-13 (Asia/Kolkata).
 
 ## Current position
 
-**Phase 5 Hardening is implemented and host verification passes. Stop before Phase 6 Release.** Every AGENTS.md §6 item has an automated reference or a manual case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md). Physical playback, background reliability and surface synchronization gates remain pending. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline. This remains a development build.
+**Phase 6 release preparation is implemented and host verification passes. Phase 6 is not complete:** app-specific profile collection, physical performance/reliability/16 KB/signed-candidate smoke, production identity and external upload signing remain open. This task did not upload or publish a release. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline.
 
-No phone was connected during the Phase 5 environment check. The new APK was built locally and was not installed on a device in this phase. The last observed phone installation was Phase 4 on November 7: Moto g54 5G / Android 15, idle Home inspected and three repeated explicit Custom launches verified. That historical smoke check does not establish playback or background reliability.
+ADB listed no phone on November 13, including the new launch helper's connection check. The new debug/release/test APKs were built locally; no installation, permission grant, benchmark/profile run or user timer mutation was performed on a phone. Last observed phone evidence remains the November 7 Phase 4 Moto g54 5G / Android 15 idle/repeated-Custom smoke check.
+
+## Implemented in Phase 6 preparation
+
+- Optimized unsigned production APK/AAB with R8's full-mode defaults and resource shrinking. Examined generated/consumer Hilt, Glance and serialization retention rather than adding blanket keep rules. Production artifact inspection rejects unexpected permissions, debuggable/profileable release flags and known debug/benchmark DEX descriptors; the release runtime graph excludes LeakCanary and benchmark libraries.
+- Validated candidate version overrides and all-or-none external signing inputs. Missing signing remains unsigned; partial signing fails immediately. No upload key, production credential or publisher identity was generated. Mapping/configuration and artifact checksums remain available with each build.
+- Applied the pinned Baseline Profile consumer/producer plugin and explicit profileinstaller runtime dependency. Added two real profile-collection journeys and five startup/frame benchmarks. Their shared Kotlin fixture is compiled/checked only as instrumentation source; normal host builds never collect a profile or wait for a device.
+- Built the actual nonMinifiedRelease/benchmarkRelease targets as the isolated `com.sujal.sleeptimer.benchmark`, labelled Sleep timer benchmark. Static APK inspection confirms both are non-debuggable and shell-profileable; the two test APKs self-instrument in their own packages. The optimized benchmark target uses the local debug key, separately from production release signing. Real instrumentation remains unrun.
+- Added a standard-library APK/AAB native verifier with malformed ELF, 4 KB-only, program-header, ZIP-offset and prohibited runtime descriptor regressions. All eight shipped native entries pass inspection; Build Tools zipalign independently passes. Play split-APK and actual 16 KB execution remain separate gates.
+- Isolated clock-only Home state from Route/layout/overlays. The dial consumes live state and the reduction control observes only its five-minute threshold. A Compose regression changes the countdown/control boundary while confirming no parent-screen recomposition. Physical tracing must still establish the stricter text-only invalidation/frame budgets.
+- Added `scripts/run-phone.sh`: checks a selected phone before building, resolves the existing SDK/JDK, builds debug, installs with `adb -s ... install -r` and opens MainActivity. It preserves app data, grants no optional app permission and starts no timer. Missing/unauthorized/multiple devices receive actionable instructions. The no-device path and shell syntax were checked; actual launch remains pending.
+- Completed [PLAY_SUBMISSION.md](PLAY_SUBMISSION.md), [RELEASE_TESTING.md](RELEASE_TESTING.md) and [CHANGELOG.md](../CHANGELOG.md): declaration/video/privacy/disclosure drafts, signing/version/rollout/listing plans, device/benchmark commands and explicit owner/QA gates. All existing manual cases remain pending until observed.
+- Rechecked 34 Maven catalog versions on November 13; no newer catalog pins found. Required release lint found Gradle **9.9.1**, now checksum-pinned and verified on existing JDK 17.0.20.1. No SDK/JDK/emulator/global CLI installation or shell-profile edit occurred.
+
+## Current verification — Phase 6 preparation
+
+| Check | Observed result |
+|---|---|
+| Existing runtime/toolchain | Gradle **9.9.1**, launcher/daemon JDK **17.0.20.1**, existing SDK 37.0 / Build Tools 36.0.0 |
+| `./gradlew formatAll --console=plain` | **PASS** under the new wrapper |
+| `./gradlew verifyRelease --continue --console=plain` | **PASS**, BUILD SUCCESSFUL in 2 min 48 s; 1,386 tasks: 1,096 executed / 188 from cache / 102 up-to-date |
+| Required checks within verifyRelease | Debug assembly, all JVM/Android-host tests, lintDebug, Spotless/ktlint, detekt, build-logic checks, image comparisons, profiling test APK compilation, release lint/APK/AAB and artifact audit |
+| Host XML | **209 passed**, zero failures/errors/skips; Home now 22, other module counts unchanged from Phase 5 |
+| Artifact-verifier tests | **9 passed**, including 32/64-bit header bounds, alignment/congruence, positive/negative ZIP layout and prohibited DEX markers |
+| Image comparisons | **15 passed**; established images unchanged, no baseline regeneration |
+| Actual profiling target APK builds | **PASS**, `:app:assembleBenchmarkRelease :app:assembleNonMinifiedRelease`, 58 s; correct isolated package/profileable/non-debuggable flags; self-instrumenting runner package bindings inspected |
+| Optimized production artifacts | Unsigned APK **2,938,800 bytes**; AAB **6,359,214 bytes**; these are artifact bytes, not measured Play downloads |
+| Native code | 8 matching APK/AAB ELF entries, initial PT_LOAD alignments all 16384; uncompressed APK native ZIP offsets pass verifier and `zipalign -c -P 16 4` |
+| Production flags/permissions/dependencies | Not debuggable/profileable; allowlist passes, no INTERNET/USE_EXACT_ALARM/REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or debug storage permissions; debug/benchmark dependencies absent from release runtime graph |
+| Distribution guard failure paths | Missing app profile **rejected as expected**; absent upload signing **rejected as expected**; deliberately partial non-secret signing inputs **rejected as expected** |
+| App-specific baseline profile | **PENDING**; no app profile source was fabricated. Packaged dependency binary profile exists and is not counted as collected app evidence |
+| Phone helper | `bash -n` **PASS**; no-device run exits with connection guidance before building/installing |
+| SDK local path | local.properties remains ignored and untracked |
+| Device/profile/performance/signing/Play gates | **PENDING**, as listed in RELEASE_TESTING and PLAY_SUBMISSION |
+
+The final artifact JSON is generated at `build/reports/release/artifacts.json`; retain it with mapping/profile/source-commit evidence for a signed candidate. Default candidate remains 0.1.0 / code 1, not a published version. No performance sample or release runtime pass is claimed.
+
+Known build-tool limits: Gradle's Java download/URL probe timed out; the official distribution was downloaded separately, verified against the official SHA-256 and placed in the approved wrapper cache. The bootstrap checksum also matches the official 9.9.1 wrapper, URL validation remains enabled, network timeout is 60 s, and the actual wrapper/full build passed. AGP 9.5.1 `:app:tasks --all` realizes a Compose Preview task requiring disabled release unit tests; targeted host/release tasks pass. No lint baseline, analyzer threshold or benchmark error suppression was added. Existing test API/native stripping and Gradle 10 deprecation notices remain.
+
+Phase 6 preparation source commits: `49db628` Gradle patch; `cc6fe51` clock composition isolation; `b2f61d2` artifact audit/tests; `d0340bf` signing/profile/benchmark build setup; `0a38cb5` phone launcher.
 
 ## Implemented in Phase 5
 
@@ -18,7 +57,7 @@ No phone was connected during the Phase 5 environment check. The new APK was bui
 - Completed the §6 A–L manual matrix with stable case IDs, exact procedures, expected results, cleanup for ADB overrides and explicit pending evidence. Includes real players, Doze/overnight, volume/routes, calls/alarms, DND, sensors, permissions, process/boot/late recovery, surfaces, OEMs and accessibility.
 - Audited 33 catalog references against official Maven metadata on November 12. Updated serialization to **1.13.0** and Roborazzi to **1.79.0**; retained the required Material 3 **1.5.0-rc01** exception. No SDK/JDK/emulator/global CLI installation or shell-profile change occurred.
 
-## Current verification — Phase 5
+## Historical verification — Phase 5
 
 Commands used command-local JAVA_HOME for the existing JDK 17.0.20.1.
 
@@ -175,7 +214,7 @@ Debug APKs: `app/build/outputs/apk/debug/app-debug.apk` (`com.sujal.sleeptimer.d
 - Home and complete Settings are implemented. Nightly background delivery, physical accessibility, screen-lock consent/work profiles, ordinary/wake-up sensor delivery and real shake false positives remain unverified. Vibration mode behavior and brightness/cold-start continuity need device checks. The shake-enabled final alarm currently uses the conservative five-minute window even on devices with a wake-up sensor or no accelerometer; battery cost and tuning of that conservative policy remain a pending device measurement.
 - Android 17 hardening/WIU start-path behavior is unverified. No emulator/system image or JDK 21 was installed. Robolectric API 36–37 requires Java 21, so approved JDK 17 coverage uses earlier APIs.
 - Phase 0 API 26/37 emulator smoke checks remain deferred. Foundation, Phase 2 and Phase 4 APKs opened on the Moto g54 5G / Android 15; this is not evidence for background playback stopping.
-- Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. Release/R8/performance/size/OEM/privacy submission gates remain later phases.
+- Stable detekt uses no type resolution because its embedded compiler predates Kotlin 2.4. Kotlin compilation and Android Lint remain enabled. Gradle reports future Gradle 10 deprecations. The unsigned R8 candidate is now host-verified; generated app profile, physical performance/signed smoke, Play download size, OEM and privacy/submission review remain open Phase 6 gates.
 
 ## Environment and repository
 
@@ -214,4 +253,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Connect and authorize the phone, install the new debug APK, play media and run the 10-second test. Open Settings → Share diagnostics and review/cancel the chooser. Then record the two-minute screen-off/forced-Doze Spotify result and the remaining cases in MANUAL_TEST_PLAN.md. All physical cases start pending; the prior phone smoke check is not a playback or synchronization pass. The next implementation phase is **Phase 6 Release**, only after the owner continues; preserve unresolved device gates in that handoff.
+Connect/unlock the phone, enable USB debugging and accept authorization, then run `./scripts/run-phone.sh` from the repo root. Play media and run the 10-second test; inspect Share diagnostics and the manual two-minute screen-off/forced-Doze Spotify case. For Phase 6, follow RELEASE_TESTING to collect the real app profile, rebuild and measure startup/frame timing on the isolated benchmark install, then close all critical runtime/16 KB/retention cases. The owner must confirm the permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or any Play upload. Phase 6 remains open until those gates have evidence.
