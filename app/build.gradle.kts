@@ -47,7 +47,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (signingConfigured) signingConfig = signingConfigs.getByName("upload")
         }
     }
@@ -57,7 +57,7 @@ android {
         signingConfig = signingConfigs.getByName("debug")
         isMinifyEnabled = true
         isShrinkResources = true
-        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+        proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         resValue("string", "shortcut_target_package", "com.sujal.sleeptimer.benchmark")
         resValue("string", "app_name", "Sleep timer benchmark")
     }

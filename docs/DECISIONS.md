@@ -406,3 +406,11 @@ Sources: [official current Gradle metadata](https://services.gradle.org/versions
 **Accepted November 13.** The phone now reports API 35, en-IN, font scale 1.0, Battery Saver off and an unlocked interactive screen. Its initial battery snapshot is charging at 37 °C. No normal-app TimerService is active; the optional notification listener is bound. Preserve the normal app/settings and the owner's untracked PHONE_COMMANDS.md.
 
 A source audit found the frame setup did not contain the explicit process kill described in D055. Add the verified MacrobenchmarkScope.killProcess call before launch, leaving startupMode unset so the prepared running screen is not killed after setup. Collect the real app profile on the isolated benchmark package and record charging/thermal context with any timing result. A successful profile is not by itself a performance-budget pass or a background-playback reliability pass.
+
+## D058 — Retain the reflectively constructed WorkManager database
+
+**Reproduced on the optimized Android 15 target, November 13.** The first five macrobenchmarks failed before measurement because the target crashed in Startup's WorkManager initializer. The profile-install receiver existed but could not run while its process failed to initialize. The resolved Glance dependency brings WorkManager 2.7.1 / Room 2.2.5. Cached Room bytecode uses Class.newInstance for WorkDatabase_Impl; its consumer rule retains database classes but the R8 usage output lists WorkDatabase_Impl's public no-argument constructor as removed.
+
+Add one explicit constructor keep rule for androidx.work.impl.WorkDatabase_Impl to both optimized production and benchmark builds. Keep full optimization enabled for the rest of the graph. Verify the rebuilt mapping/usage and rerun the real required-profile benchmarks; do not suppress the broadcast error or weaken BaselineProfileMode.Require. Preserve the first failed run as evidence, separately from any successful rerun. Profile sources remain the real successful non-minified collection output.
+
+References: [R8 full mode](https://developer.android.com/topic/performance/app-optimization/full-mode), [narrow reflection rules](https://developer.android.com/topic/performance/app-optimization/keep-rules-overview), plus the resolved Room AAR bytecode/consumer rule and target crash/usage output.
