@@ -5,6 +5,7 @@ import android.os.SystemClock
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.Direction
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
@@ -50,8 +51,8 @@ class TimerJourney(private val device: UiDevice, private val target: String) {
     }
 
     fun startLongTimer() {
-        node(By.text("60 min")).click()
-        node(By.desc("Start")).click()
+        clickStartControl(By.text("60 min"))
+        clickStartControl(By.desc("Start"))
         device.wait(Until.findObject(By.text("Keep running")), RATIONALE_WAIT)?.click()
         node(By.desc("Stop"))
     }
@@ -90,8 +91,20 @@ class TimerJourney(private val device: UiDevice, private val target: String) {
         "Performance journey target missing; use an unlocked English-language phone with no permission dialogs."
     }
 
+    private fun clickStartControl(selector: BySelector) {
+        repeat(START_ATTEMPTS) { attempt ->
+            try {
+                node(selector).click()
+                return
+            } catch (stale: StaleObjectException) {
+                if (attempt == START_ATTEMPTS - 1) throw stale
+            }
+        }
+    }
+
     private companion object {
         const val WAIT = 5_000L
+        const val START_ATTEMPTS = 3
         const val RATIONALE_WAIT = 500L
         const val SCROLLS = 2
         const val SCROLL_FRACTION = 0.8f
