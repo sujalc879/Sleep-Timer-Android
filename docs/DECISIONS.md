@@ -399,3 +399,10 @@ Frame benchmarks explicitly kill/relaunch in setup without StartupMode.COLD: tha
 Add scripts/run-phone.sh because repeated installDebug attempts failed at device discovery. It checks a selected physical device's authorization before building, resolves the existing local SDK/JDK, builds debug, then uses adb -s for both update installation and MainActivity launch. It preserves app data, grants no permissions and starts no timer. No-device and shell-syntax paths are host-testable; successful install/launch remains pending until a phone is authorized.
 
 Sources: [official current Gradle metadata](https://services.gradle.org/versions/current), [9.9.1 distribution checksum](https://services.gradle.org/distributions/gradle-9.9.1-bin.zip.sha256), [ELF program-header specification](https://refspecs.linuxfoundation.org/elf/gabi4%2B/ch5.pheader.html), [Macrobenchmark scope API](https://developer.android.com/reference/kotlin/androidx/benchmark/macro/MacrobenchmarkScope).
+
+
+## D057 — Connected profile evidence and fresh frame setup
+
+**Accepted November 13.** The phone now reports API 35, en-IN, font scale 1.0, Battery Saver off and an unlocked interactive screen. Its initial battery snapshot is charging at 37 °C. No normal-app TimerService is active; the optional notification listener is bound. Preserve the normal app/settings and the owner's untracked PHONE_COMMANDS.md.
+
+A source audit found the frame setup did not contain the explicit process kill described in D055. Add the verified MacrobenchmarkScope.killProcess call before launch, leaving startupMode unset so the prepared running screen is not killed after setup. Collect the real app profile on the isolated benchmark package and record charging/thermal context with any timing result. A successful profile is not by itself a performance-budget pass or a background-playback reliability pass.

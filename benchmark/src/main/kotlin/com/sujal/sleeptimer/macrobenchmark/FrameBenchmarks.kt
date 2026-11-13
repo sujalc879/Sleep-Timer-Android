@@ -49,6 +49,7 @@ class FrameBenchmarks {
             compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
             iterations = ITERATIONS,
             setupBlock = {
+                killProcess()
                 pressHome()
                 startActivityAndWait()
                 setup()
