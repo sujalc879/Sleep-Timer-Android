@@ -23,7 +23,11 @@ val applicationAndLibraryModules = checkedModules - setOf(":core:model", ":basel
 tasks.register("assembleDebug") {
     group = "build"
     dependsOn(applicationAndLibraryModules.map { "$it:assembleDebug" })
-    dependsOn(":core:model:assemble", ":baselineprofile:assembleDebug", ":benchmark:assembleDebug")
+    dependsOn(
+        ":core:model:assemble",
+        ":baselineprofile:assembleNonMinifiedRelease",
+        ":benchmark:assembleBenchmarkRelease",
+    )
 }
 
 tasks.register("testDebugUnitTest") {
@@ -60,4 +64,39 @@ tasks.register("verifyFoundation") {
     description = "Builds Foundation and runs unit, lint, formatting and static-analysis checks."
     dependsOn("assembleDebug", "testDebugUnitTest", "lintDebug", "spotlessCheck", "detekt")
     dependsOn(gradle.includedBuild("build-logic").task(":check"))
+}
+
+tasks.register<Exec>("verifyReleaseArtifacts") {
+    group = "verification"
+    description = "Audits the optimized APK/AAB, native alignment, permissions and shipped code."
+    dependsOn(":app:assembleRelease", ":app:bundleRelease")
+    commandLine("python3", "scripts/verify_release.py", "--report", "build/reports/release/artifacts.json")
+}
+
+tasks.register("verifyRelease") {
+    group = "verification"
+    description = "Runs host quality/image checks, release lint and optimized artifact inspection."
+    dependsOn("verifyFoundation", "verifyReleaseArtifacts", "verifyArtifactVerifier", ":app:lintRelease")
+    dependsOn(":feature:home:verifyRoborazziDebug", ":feature:settings:verifyRoborazziDebug")
+}
+
+tasks.register<Exec>("verifyDistributionArtifacts") {
+    group = "verification"
+    description = "Additionally requires an app-generated profile and externally supplied release signing."
+    dependsOn("verifyRelease")
+    commandLine("python3", "scripts/verify_release.py", "--require-app-profile", "--require-signed")
+}
+
+configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+    kotlin { target("tools/performance/**/*.kt") }
+}
+
+tasks.named<io.gitlab.arturbosch.detekt.Detekt>("detekt") {
+    setSource(fileTree("tools/performance/src/main/kotlin") { include("**/*.kt") })
+}
+
+tasks.register<Exec>("verifyArtifactVerifier") {
+    group = "verification"
+    description = "Tests rejection of malformed and 4 KB-only native binaries."
+    commandLine("python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_*.py")
 }

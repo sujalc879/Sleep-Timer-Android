@@ -109,6 +109,7 @@ class AndroidTestConventionPlugin : Plugin<Project> {
                 targetCompatibility = JavaVersion.VERSION_17
             }
             targetProjectPath = ":app"
+            experimentalProperties["android.experimental.self-instrumenting"] = true
             lint { warningsAsErrors = true }
         }
     }
