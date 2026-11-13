@@ -1,4 +1,4 @@
-# Direct Google Maven and Maven Central metadata checked 2026-11-12.
+# Direct Google Maven and Maven Central metadata checked 2026-11-13.
 # Material 3 is the sole prerelease exception required by AGENTS.md.
 # AGP 9 supplies built-in Kotlin; Android modules must not apply kotlin-android.
 [versions]
