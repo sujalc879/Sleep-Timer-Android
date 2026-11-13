@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.Posture
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +61,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     posture: Posture = currentWindowAdaptiveInfoV2().windowPosture,
+    liveState: State<HomeUiState>? = null,
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -71,13 +73,19 @@ fun HomeScreen(
                 CircularProgressIndicator()
             }
         } else {
-            HomeContent(state, actions, posture, Modifier.fillMaxSize().padding(padding))
+            HomeContent(state, actions, posture, Modifier.fillMaxSize().padding(padding), liveState)
         }
     }
 }
 
 @Composable
-private fun HomeContent(state: HomeUiState, actions: HomeActions, posture: Posture, modifier: Modifier = Modifier) {
+private fun HomeContent(
+    state: HomeUiState,
+    actions: HomeActions,
+    posture: Posture,
+    modifier: Modifier = Modifier,
+    liveState: State<HomeUiState>? = null,
+) {
     var windowPosition by remember { mutableStateOf(Offset.Zero) }
     BoxWithConstraints(modifier.onGloballyPositioned { windowPosition = it.positionInWindow() }) {
         val panes = posture.hingeList.firstNotNullOfOrNull {
@@ -121,9 +129,10 @@ private fun HomeContent(state: HomeUiState, actions: HomeActions, posture: Postu
                         content,
                         Modifier.size(dialSize).then(dialModifier),
                         primaryModifier,
+                        liveState,
                     )
                 } else {
-                    HingeHomePanels(state, actions, running, panes, current, primaryModifier, dialModifier)
+                    HingeHomePanels(state, actions, running, panes, current, primaryModifier, dialModifier, liveState)
                 }
             }
         }
@@ -174,6 +183,7 @@ private fun HomePanels(
     modifier: Modifier = Modifier,
     dialModifier: Modifier = Modifier,
     primaryModifier: Modifier = Modifier,
+    liveState: State<HomeUiState>? = null,
 ) {
     if (wide) {
         Row(
@@ -184,7 +194,12 @@ private fun HomePanels(
             Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                 if (!running) StatusChips(state, actions)
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    HomeDial(state, actions, Modifier.size(minOf(306.dp, maxWidth, maxHeight)).then(dialModifier))
+                    HomeDial(
+                        state,
+                        actions,
+                        Modifier.size(minOf(306.dp, maxWidth, maxHeight)).then(dialModifier),
+                        liveState,
+                    )
                 }
             }
             Column(
@@ -192,14 +207,14 @@ private fun HomePanels(
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 if (running) RunningDetails(state) else Presets(state, actions)
-                BottomActions(state, actions, running, primaryModifier)
+                BottomActions(state, actions, running, primaryModifier, liveState)
             }
         }
     } else {
         Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             if (!running) StatusChips(state, actions)
             if (!running) Spacer(Modifier.weight(1f)) else Spacer(Modifier.height(8.dp))
-            HomeDial(state, actions, dialModifier)
+            HomeDial(state, actions, dialModifier, liveState)
             if (running) {
                 Spacer(Modifier.height(24.dp))
                 RunningDetails(state)
@@ -209,7 +224,7 @@ private fun HomePanels(
                 Presets(state, actions)
                 Spacer(Modifier.height(28.dp))
             }
-            BottomActions(state, actions, running, primaryModifier)
+            BottomActions(state, actions, running, primaryModifier, liveState)
         }
     }
 }

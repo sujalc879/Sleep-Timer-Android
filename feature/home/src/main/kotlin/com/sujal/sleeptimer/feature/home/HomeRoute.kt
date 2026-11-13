@@ -43,7 +43,8 @@ fun HomeRoute(
     surfaceEvents: Flow<SurfaceEvent?> = emptyFlow(),
     onSurfaceConsumed: (String) -> Unit = {},
 ) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val liveState = viewModel.state.collectAsStateWithLifecycle()
+    val state by viewModel.layoutState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
@@ -141,6 +142,7 @@ fun HomeRoute(
             ),
             onSettings,
             snackbar = snackbar,
+            liveState = liveState,
         )
         HomeSheets(sheet, state, viewModel::saveNightly, { sheet = it }, fix, start, snackbar)
         ExactAlarmRationale(exactRationale, { exactRationale = false }, {

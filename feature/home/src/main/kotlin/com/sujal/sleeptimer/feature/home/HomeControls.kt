@@ -14,6 +14,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -32,54 +36,66 @@ import com.sujal.sleeptimer.core.designsystem.SleepTimerIcon
 import com.sujal.sleeptimer.core.designsystem.SleepTimerPrimaryAction
 import com.sujal.sleeptimer.core.designsystem.SleepTimerSymbol
 import com.sujal.sleeptimer.core.designsystem.TimerChoice
+import com.sujal.sleeptimer.core.model.StopResult
 import com.sujal.sleeptimer.core.model.StopStatus
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.TimerPhase
 import java.util.Date
 
 @Composable
-internal fun HomeDial(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
+internal fun HomeDial(
+    state: HomeUiState,
+    actions: HomeActions,
+    modifier: Modifier = Modifier,
+    liveState: State<HomeUiState>? = null,
+) {
+    val current = liveState?.value ?: state
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
-    val end = stringResource(R.string.ends_at, DateFormat.getTimeFormat(context).format(Date(state.endWallMillis)))
-    val endLabel = when (state.phase) {
+    val end = stringResource(R.string.ends_at, DateFormat.getTimeFormat(context).format(Date(current.endWallMillis)))
+    val endLabel = when (current.phase) {
         TimerPhase.STOPPING -> stringResource(R.string.stopping)
         TimerPhase.DEFERRED -> stringResource(R.string.deferred)
         else -> end
     }
-    val spokenMinutes = (state.displayMillis / TimerLimits.MINUTE).toInt().coerceAtLeast(1)
-    val seconds = ((state.displayMillis + TimerLimits.SECOND - 1) / TimerLimits.SECOND).toInt()
-    val spoken = if (state.running && state.displayMillis < TimerLimits.MINUTE) {
+    val spokenMinutes = (current.displayMillis / TimerLimits.MINUTE).toInt().coerceAtLeast(1)
+    val seconds = ((current.displayMillis + TimerLimits.SECOND - 1) / TimerLimits.SECOND).toInt()
+    val spoken = if (current.running && current.displayMillis < TimerLimits.MINUTE) {
         pluralStringResource(R.plurals.spoken_seconds, seconds, seconds)
     } else {
         pluralStringResource(R.plurals.spoken_minutes, spokenMinutes, spokenMinutes)
     }
-    val message = state.finished?.let {
-        stringResource(
-            when (it.status) {
-                StopStatus.STOPPED -> R.string.finished_stopped
-                StopStatus.NOTHING_PLAYING -> R.string.finished_quiet
-                StopStatus.INTERRUPTED -> R.string.finished_interrupted
-                else -> R.string.finished_failed
-            },
-        )
-    }
+    val message = finishedMessage(current.finished)
     SleepTimerDial(
         DialPresentation(
-            minutes = (state.durationMillis / TimerLimits.MINUTE).toInt(),
-            countdown = countdown(state.displayMillis, locale),
+            minutes = (current.durationMillis / TimerLimits.MINUTE).toInt(),
+            countdown = countdown(current.displayMillis, locale),
             endLabel = if (message == null) endLabel else "",
             spokenDuration = message ?: spoken,
-            controlLabel = stringResource(if (state.running) R.string.remaining_control else R.string.duration_control),
+            controlLabel = stringResource(
+                if (current.running) R.string.remaining_control else R.string.duration_control,
+            ),
             increaseLabel = stringResource(R.string.increase_minute),
             decreaseLabel = stringResource(R.string.decrease_minute),
             increaseFiveLabel = stringResource(R.string.increase_five_minutes),
             decreaseFiveLabel = stringResource(R.string.decrease_five_minutes),
-            running = state.running, progress = state.progress, message = message,
+            running = current.running, progress = current.progress, message = message,
         ),
         actions.onMinutesChange,
         actions.onSelectionFinished,
         modifier,
+    )
+}
+
+@Composable
+private fun finishedMessage(result: StopResult?): String? = result?.let {
+    stringResource(
+        when (it.status) {
+            StopStatus.STOPPED -> R.string.finished_stopped
+            StopStatus.NOTHING_PLAYING -> R.string.finished_quiet
+            StopStatus.INTERRUPTED -> R.string.finished_interrupted
+            else -> R.string.finished_failed
+        },
     )
 }
 
@@ -145,7 +161,16 @@ internal fun RunningDetails(state: HomeUiState) {
 }
 
 @Composable
-internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Boolean, modifier: Modifier = Modifier) {
+internal fun BottomActions(
+    state: HomeUiState,
+    actions: HomeActions,
+    running: Boolean,
+    modifier: Modifier = Modifier,
+    liveState: State<HomeUiState>? = null,
+) {
+    val reduceEnabled by remember(liveState, state.remainingMillis) {
+        derivedStateOf { (liveState?.value?.remainingMillis ?: state.remainingMillis) > REDUCE_MILLIS }
+    }
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -155,7 +180,7 @@ internal fun BottomActions(state: HomeUiState, actions: HomeActions, running: Bo
             FilledTonalButton(
                 actions.onReduce,
                 Modifier.weight(1f).heightIn(min = 56.dp),
-                enabled = state.remainingMillis > REDUCE_MILLIS,
+                enabled = reduceEnabled,
                 contentPadding = PaddingValues(horizontal = 8.dp),
             ) {
                 Text(stringResource(R.string.reduce), textAlign = TextAlign.Center)

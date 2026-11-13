@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.material3.adaptive.HingeInfo
 import androidx.compose.material3.adaptive.Posture
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +17,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -43,6 +45,25 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class, qualifiers = "w390dp-h844dp-mdpi")
 class HomeUiTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun aClockTickUpdatesDialAndReduceBoundaryWithoutRecomposingTheScreen() {
+        val live = mutableStateOf(homeFixture().copy(runId = "run", remainingMillis = 301 * TimerLimits.SECOND))
+        val layout = live.value.forLayout()
+        var screenCompositions = 0
+        rule.setContent {
+            SideEffect { screenCompositions++ }
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(layout, homeActions(), {}, liveState = live) }
+        }
+        rule.onNodeWithText("− 5 min").assertIsEnabled()
+        val before = screenCompositions
+        rule.runOnIdle { live.value = live.value.copy(remainingMillis = 300 * TimerLimits.SECOND, progress = 0.5f) }
+        rule.onNodeWithText("05:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("− 5 min").assertIsNotEnabled()
+        rule.runOnIdle {
+            assertThat(screenCompositions).isEqualTo(before)
+            assertThat(live.value.forLayout()).isEqualTo(layout)
+        }
+    }
 
     @Test fun presetsKeyboardAndTalkBackRangeActionsChangeTheSameDuration() {
         var state by mutableStateOf(homeFixture())

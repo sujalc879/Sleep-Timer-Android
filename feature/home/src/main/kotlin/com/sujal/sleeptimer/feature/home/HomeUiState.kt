@@ -76,3 +76,11 @@ private const val SECONDS_PER_HOUR = 3_600
 @Suppress("MagicNumber") // Product's connected preset choices, expressed directly.
 internal val PRESET_MINUTES = listOf(15, 30, 45, 60)
 internal const val REDUCE_MILLIS = 5 * TimerLimits.MINUTE
+
+/** Clock-only fields are read by the dial; they must not invalidate the screen layout. */
+internal fun HomeUiState.forLayout(): HomeUiState = copy(
+    remainingMillis = 0,
+    endWallMillis = 0,
+    progress = 0f,
+    finished = null,
+)

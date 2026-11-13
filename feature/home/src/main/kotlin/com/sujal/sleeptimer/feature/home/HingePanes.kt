@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.adaptive.HingeInfo
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,17 +53,23 @@ internal fun HingeHomePanels(
     modifier: Modifier = Modifier,
     primaryModifier: Modifier = Modifier,
     dialModifier: Modifier = Modifier,
+    liveState: State<HomeUiState>? = null,
 ) {
     Box(modifier.fillMaxSize(), contentAlignment = AbsoluteAlignment.TopLeft) {
         HingePane(panes.dial, fill = true) {
             if (!running) StatusChips(state, actions)
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                HomeDial(state, actions, Modifier.size(minOf(306.dp, maxWidth, maxHeight)).then(dialModifier))
+                HomeDial(
+                    state,
+                    actions,
+                    Modifier.size(minOf(306.dp, maxWidth, maxHeight)).then(dialModifier),
+                    liveState,
+                )
             }
         }
         HingePane(panes.controls) {
             if (running) RunningDetails(state) else Presets(state, actions)
-            BottomActions(state, actions, running, primaryModifier)
+            BottomActions(state, actions, running, primaryModifier, liveState)
         }
     }
 }
