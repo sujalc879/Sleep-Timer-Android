@@ -2,6 +2,8 @@
 
 Updated November 14, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/startup profile collection pass. Connected-device evidence, including startup/readiness fixes, preliminary timings and the final controlled playback smoke, is recorded in [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md). Frame overruns remain unresolved. Carry every pending case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md) into the release decision.
 
+[PHASE6_FRAME_ANALYSIS.md](PHASE6_FRAME_ANALYSIS.md) distinguishes queued presentation latency from dropped frames. Ten steady measured intervals have no drop/app-deadline classification, while the mixed control journey has five drops. Presentation latency, dial classification and final budgets remain open.
+
 ## Host checks
 
 ```sh
@@ -75,6 +77,10 @@ After app profile generation and rebuilding the benchmark target:
 ```
 
 The startup class compares ten cold launches with CompilationMode.None and a required baseline profile. Three frame tests collect dial gestures, Settings scrolling and eight seconds of visible countdown/wave with extension/reduction/cancellation. Frame setup explicitly kills/relaunches before preparing the screen; it does not use cold-start mode to kill the prepared state after setup. The tests are self-instrumenting in their own process; the target is optimized/non-debuggable/profileable.
+
+A fourth frame method, steadyCountdownAndWave, settles the Home transition in setup and measures eight seconds without controls/cancellation. The prior isolated run is canceled in the next setup, and final cancellation is outside measurement. The original mixed method remains for comparisons. Fixture queries/cleanup are scoped to the benchmark package; selectors are copied before package constraints so stale-node retries remain reusable. The full suite now contains six macrobenchmark methods; diagnostic executions do not by themselves satisfy a budget.
+
+Use the read-only SQL in tools/performance to retain actual FrameTimeline classifications alongside raw FrameTimingMetric samples. The measured-window queries require exactly one measureBlock section and can have counts different from the metric's UI/render/expected-frame matching. An empty query result is unavailable evidence, not a zero-drop pass. Keep power-rail/import warnings and incomplete traces visible. No tool installation is required when reusing the existing Benchmark dependency's processor.
 
 November 13 all five methods completed across reruns. Required-profile startup median was 441.65 ms with all ten samples below 500 ms, while charging. Settings/dial/running all recorded positive frame overruns; the frame target is not met. These measurements precede the November 14 readiness fix. Inspect traces, fix the cost and repeat the suite on final source under controlled battery-powered conditions; do not reuse these results as a final budget pass.
 

@@ -2,6 +2,8 @@
 
 Baseline/startup profile collection passed on the owner's Moto g54 5G, Android 15 (API 35). All five benchmark methods completed across the reruns described below. Profiled cold startup was under 500 ms in all ten samples, but the charging-device run is preliminary. Frame overruns were measured, especially on the running screen: the no-dropped-frames target is **not met**. Phase 6 remains open.
 
+Later [frame analysis](PHASE6_FRAME_ANALYSIS.md) refines the interpretation: ten steady-wave measured windows have no drop/app-deadline classification; most latency is buffer stuffing. The mixed control journey has five drops. The original evidence below remains intact; the overall frame gate is still open.
+
 Profile collection used application source `e5bce13`; the frame setup correction is `7c427f2`. The optimized startup fix is `acbd97d`; generated profile source is committed as `1c8c3ab`. The countdown fixture correction is `bc93b8b`. November 13 timing results predate the November 14 execution-readiness fix and must not be presented as measurements of that later change. Profile rules were not hand-edited.
 
 ## Device conditions

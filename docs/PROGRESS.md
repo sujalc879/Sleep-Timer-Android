@@ -10,6 +10,8 @@ The Moto g54 5G / Android 15 connected on November 13. Both real profile journey
 
 November 13 benchmarks completed all five methods across reruns. Required-profile cold startup: median **441.65 ms**, all ten samples below 500 ms, preliminary while charging. Frame target **not met**: running/countdown has **6,979 positive overrun samples / 8,382**; Settings and dial also have overruns. These measurements predate the November 14 readiness fix and require investigation/retesting on final source.
 
+Follow-up [frame analysis](PHASE6_FRAME_ANALYSIS.md) separates overrun latency from actual drops. Across ten measured steady-wave intervals on current app source, **9,567 FrameTimeline records had zero Dropped Frame or App Deadline Missed classification**. Buffer-stuffing latency remains. The mixed journey recorded **five drops / 5,200 records**, all at 8.18–8.27 s when extension/reduction begins. App draw work in the inspected earlier capture averaged 0.318 ms; most time was presentation/buffer waiting. No production UI or frame-rate change was made. Next investigation targets those interactions, dial behavior and presentation/dimming hypotheses; no overall frame-budget pass is claimed.
+
 November 14 controlled playback testing exposed repeated verification restarts from two service-readiness paths. Both now use an idempotent ExecutionReady command. Final phone retest on `5cb3ae5`: **one stop attempt**, +55 ms after the 10-second deadline; silent player paused at +66 ms; MEDIA_SESSION result completed at +331 ms. Fade was skipped because the route was unavailable/unsafe. The updated normal app is open on Home; timer/test-player services and owned wake locks are absent. This does not close real-player, fade/restore, screen-off/Doze or overnight gates.
 
 ## Implemented in Phase 6 preparation
@@ -20,6 +22,7 @@ November 14 controlled playback testing exposed repeated verification restarts f
 - Built the actual nonMinifiedRelease/benchmarkRelease targets as the isolated `com.sujal.sleeptimer.benchmark`, labelled Sleep timer benchmark. Static APK inspection confirms both are non-debuggable and shell-profileable; the two test APKs self-instrument in their own packages. The optimized benchmark target uses the local debug key, separately from production release signing. Two real producer tests passed, reaching stable profiles at iterations 7 and 11. The rebuilt optimized artifacts include their compiled app profile.
 - Fixed a device-reproduced optimized startup crash: the transitive Room consumer rule retained WorkDatabase_Impl but its reflective no-argument constructor was removed. One constructor-specific rule applies to production and benchmark builds; full optimization remains enabled. Preserved the first five failed benchmark setup results separately from the rerun.
 - Made service promotion and the alarm's ensureForeground intent idempotent, preserving in-progress playback verification. Added a suspended-verification engine regression and decoder coverage on APIs 26/35. Genuine service loss/restart and access/time-change reconciliation remain covered by existing tests.
+- Added a separate steady-wave benchmark, cleanup outside measurement and target-package-scoped reusable selectors. Read-only Perfetto SQL records whole-capture/thread costs, measured-window classifications and drop/deadline offsets. Original mixed measurements remain available; no metric suppression or replacement wave implementation was introduced.
 - Added a standard-library APK/AAB native verifier with malformed ELF, 4 KB-only, program-header, ZIP-offset and prohibited runtime descriptor regressions. All eight shipped native entries pass inspection; Build Tools zipalign independently passes. Play split-APK and actual 16 KB execution remain separate gates.
 - Isolated clock-only Home state from Route/layout/overlays. The dial consumes live state and the reduction control observes only its five-minute threshold. A Compose regression changes the countdown/control boundary while confirming no parent-screen recomposition. Physical tracing must still establish the stricter text-only invalidation/frame budgets.
 - Added `scripts/run-phone.sh`: checks a selected phone before building, resolves the existing SDK/JDK, builds debug, installs with `adb -s ... install -r` and opens MainActivity. It preserves app data, grants no optional app permission and starts no timer. Missing/unauthorized/multiple devices receive actionable instructions. Shell/no-device paths and actual November 13/14 install/open runs pass.
@@ -32,7 +35,7 @@ November 14 controlled playback testing exposed repeated verification restarts f
 |---|---|
 | Existing runtime/toolchain | Gradle **9.9.1**, launcher/daemon JDK **17.0.20.1**, existing SDK 37.0 / Build Tools 36.0.0 |
 | `./gradlew formatAll --console=plain` | **PASS** under the new wrapper |
-| `./gradlew verifyRelease --continue --console=plain` | **PASS** after both readiness fixes, November 14, BUILD SUCCESSFUL in 1 min 7 s; 1,386 tasks: 200 executed / 13 from cache / 1,173 up-to-date |
+| `./gradlew verifyRelease --continue --console=plain` | **PASS** after final diagnostic-fixture changes, November 14, BUILD SUCCESSFUL in 3 s; 1,386 tasks: 28 executed / 1,358 up-to-date |
 | Required checks within verifyRelease | Debug assembly, all JVM/Android-host tests, lintDebug, Spotless/ktlint, detekt, build-logic checks, image comparisons, profiling test APK compilation, release lint/APK/AAB and artifact audit |
 | Host XML | **212 passed**, zero failures/errors/skips; includes the suspended-verification and API 26/35 decoder regressions |
 | Artifact-verifier tests | **9 passed**, including 32/64-bit header bounds, alignment/congruence, positive/negative ZIP layout and prohibited DEX markers |
@@ -43,8 +46,8 @@ November 14 controlled playback testing exposed repeated verification restarts f
 | Production flags/permissions/dependencies | Not debuggable/profileable; allowlist passes, no INTERNET/USE_EXACT_ALARM/REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or debug storage permissions; debug/benchmark dependencies absent from release runtime graph |
 | Distribution guard paths | Missing app profile was **rejected as expected** before collection; `--require-app-profile` now **PASS**; absent upload signing and deliberately partial non-secret signing inputs were **rejected as expected** |
 | App-specific baseline/startup profile | **PASS** on the Moto / API 35: 2 producer tests, zero failures/errors/skips; generated sources contain 1,977 / 1,129 app-package rules, with dependency rules also retained |
-| Device benchmark execution | Four methods passed after the retention fix; corrected countdown method passed separately, five iterations; failed setup runs and 35 successful measurement traces retained |
-| Measured performance | Preliminary required-profile cold samples all <500 ms; frame overruns present in all three journeys, especially countdown/wave; final budgets remain **OPEN** |
+| Device benchmark execution | Original five methods passed across earlier runs; new mixed/steady comparison **PASS** (two methods), scoped steady validation **PASS** (one method); 15 new measurement traces retained with the earlier evidence |
+| Measured performance | Preliminary cold samples all <500 ms; steady measured windows have no drop/app-deadline classification across 9,567 records, but buffer latency persists; mixed controls have five drops, dial still needs classification; budgets remain **OPEN** |
 | Controlled playback smoke | Cancellation leaves playback active; final 10-second expiry pauses silent GOOD player at +66 ms, one attempt, MEDIA_SESSION result; physical fade/restore and real-player/Doze remain untested |
 | Phone helper | `bash -n` and no-device guidance **PASS**; actual final debug install/open **PASS**, data preserved, selected duration unchanged by final test |
 | SDK local path | local.properties remains ignored and untracked |
@@ -57,6 +60,8 @@ Known build-tool limits: Gradle's Java download/URL probe timed out; the officia
 Phase 6 preparation source commits: `49db628` Gradle patch; `cc6fe51` clock composition isolation; `b2f61d2` artifact audit/tests; `d0340bf` signing/profile/benchmark build setup; `0a38cb5` phone launcher.
 
 Connected continuation: `7c427f2` fresh frame setup; `acbd97d` reflective database constructor; `1c8c3ab` real collected profiles; `bc93b8b` stale timer-start handles; `5cb3ae5` idempotent service readiness.
+
+Frame diagnostics: `147188c` steady measurement, isolated reusable selectors and read-only frame classification queries. Current production app code remains `5cb3ae5`.
 
 ## Implemented in Phase 5
 
@@ -264,4 +269,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Inspect retained traces to locate the running/dial frame cost, fix the measured issue, and repeat controlled performance measurements on the final source. Continue the real-player two-minute screen-off/forced-Doze Spotify case and the remaining manual/16 KB/runtime gates. The normal app is already installed; use `bash ./scripts/run-phone.sh` to rebuild/update/open it again. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or any Play upload. Phase 6 remains open until those gates have evidence.
+Investigate extension/reduction updates at the measured drop offsets, classify dial frames and test presentation/dimming hypotheses. Use those findings for a targeted production change and repeat controlled measurements; do not replace the Material 3 wave based on the old overrun counts alone. Continue the real-player two-minute screen-off/forced-Doze Spotify case and remaining manual/16 KB/runtime gates. The normal app is already installed; use `bash ./scripts/run-phone.sh` to rebuild/update/open it again. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or any Play upload. Phase 6 remains open until those gates have evidence.
