@@ -50,7 +50,7 @@ object TimerServiceIntents {
         CANCEL -> TimerCommand.Stop(id, expected)
         EXTEND -> validDelta(intent)?.let { TimerCommand.Extend(it, id, expected) }
         REDUCE -> validDelta(intent)?.let { TimerCommand.Reduce(it, id, expected) }
-        RECONCILE -> TimerCommand.Reconcile("service-signal")
+        RECONCILE -> TimerCommand.ExecutionReady
         else -> null
     }
 

@@ -105,14 +105,29 @@ internal suspend fun EngineRuntime.handleCommand(command: TimerCommand): Command
     commandRejection(command)?.let { return it }
     return when (command) {
         is TimerCommand.SelectDuration -> selectDuration(command)
+
         is TimerCommand.Start -> startCommand(command)
+
         is TimerCommand.UndoReplacement -> undoReplacement(command)
+
         is TimerCommand.StartTest -> startTest(command)
+
         is TimerCommand.Stop -> cancelTimer(command)
+
         is TimerCommand.Extend -> adjust(command.deltaMillis, command.commandId, command.expectedRunId, extend = true)
+
         is TimerCommand.Reduce -> adjust(command.deltaMillis, command.commandId, command.expectedRunId, extend = false)
+
         is TimerCommand.AlarmFired -> alarmFired(command)
+
+        TimerCommand.ExecutionReady -> if (executionAllowed) {
+            CommandResult(true)
+        } else {
+            reconcile(TimerCommand.Reconcile("service-ready"))
+        }
+
         is TimerCommand.Reconcile -> reconcile(command)
+
         is TimerCommand.SettingsChanged -> changeSettings(command.settings)
     }
 }

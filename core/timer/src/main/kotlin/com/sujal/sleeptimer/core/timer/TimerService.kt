@@ -112,7 +112,7 @@ class TimerService : Service() {
         markWhileInUse(command)
         serviceScope.launch {
             try {
-                engine.send(TimerCommand.Reconcile("service-ready", executionAllowed = true))
+                engine.send(TimerCommand.ExecutionReady)
                 if (command != null) engine.send(command) else diagnostics.record("invalid-service-command")
             } finally {
                 pending.decrementAndGet()

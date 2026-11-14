@@ -476,6 +476,33 @@ class TimerEngineSchedulingTest {
     }
 
     @Test
+    fun repeatedServiceReadinessAndAlarmsCannotRestartPlaybackVerification() = runTest {
+        val f = fixture(executionAllowed = false)
+        val stopBlock = CompletableDeferred<Unit>()
+        f.playback.stopBlock = stopBlock
+        f.send(TimerCommand.StartTest(true, "test"))
+        f.send(TimerCommand.ExecutionReady)
+        val plan = f.alarms.plans.last()
+        val scheduled = f.alarms.plans.size
+        repeat(3) { f.send(TimerCommand.ExecutionReady) }
+        assertThat(f.alarms.plans).hasSize(scheduled)
+        advanceTimeBy(TEST_SECONDS)
+        runCurrent()
+        repeat(3) {
+            f.send(TimerCommand.ExecutionReady)
+            f.send(TimerCommand.AlarmFired(plan.runId, plan.generation, AlarmKind.FINAL_WINDOW))
+        }
+        assertThat(f.snapshot.phase).isEqualTo(TimerPhase.STOPPING)
+        assertThat(f.playback.stopTimes).containsExactly(TEST_SECONDS)
+        assertThat(f.alarms.plans).hasSize(scheduled)
+        stopBlock.complete(Unit)
+        runCurrent()
+        assertThat(f.snapshot.lastTestResult?.status).isEqualTo(StopStatus.STOPPED)
+        assertThat(f.wakes.active).isEqualTo(0)
+        f.engine.close()
+    }
+
+    @Test
     fun serviceLossReleasesRuntimeLocksAndResumingServiceRestoresProtection() = runTest {
         val f = fixture(exact = false)
         f.start()
@@ -672,6 +699,7 @@ private class FakePlayback(private val clock: Clock, private val store: MemorySn
     var playing = true
     var resumesImmediately = false
     var fadeBlock: CompletableDeferred<Unit>? = null
+    var stopBlock: CompletableDeferred<Unit>? = null
     val fadeStartedAt = mutableListOf<Long>()
     val stopTimes = mutableListOf<Long>()
     val recoverAllowPlaying = mutableListOf<Boolean>()
@@ -704,6 +732,7 @@ private class FakePlayback(private val clock: Clock, private val store: MemorySn
             return StopResult(StopStatus.DEFERRED)
         }
         stopTimes.add(clock.elapsedRealtime())
+        stopBlock?.await()
         playing = resumesImmediately
         return StopResult(StopStatus.STOPPED, StopMethod.MEDIA_KEY, clock.elapsedRealtime(), isTest = run.isTest)
     }

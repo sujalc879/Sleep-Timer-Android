@@ -24,6 +24,12 @@ class TimerServiceIntentsTest {
     }
 
     @Test
+    fun ensuringForegroundOnlyAnnouncesExecutionReadiness() {
+        val ensure = TimerServiceIntents.base(context, TimerServiceIntents.RECONCILE)
+        assertThat(TimerServiceIntents.decode(ensure, "alarm-delivery")).isEqualTo(TimerCommand.ExecutionReady)
+    }
+
+    @Test
     fun unknownActionInvalidDurationAndUnknownSourceAreRejected() {
         assertThat(TimerServiceIntents.decode(Intent("unknown"), "delivery")).isNull()
         val start = TimerServiceIntents.base(context, TimerServiceIntents.START)

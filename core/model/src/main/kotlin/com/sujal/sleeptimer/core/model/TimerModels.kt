@@ -146,6 +146,7 @@ sealed interface TimerCommand {
     data class Reduce(val deltaMillis: Long, val commandId: String, val expectedRunId: String? = null) : TimerCommand
     data class StartTest(val hasWhileInUse: Boolean, val commandId: String) : TimerCommand
     data class AlarmFired(val runId: String, val generation: Long, val kind: AlarmKind) : TimerCommand
+    data object ExecutionReady : TimerCommand
     data class Reconcile(
         val reason: String,
         val serviceRestarted: Boolean = false,
