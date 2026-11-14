@@ -75,8 +75,12 @@ class TimerJourney(private val device: UiDevice, private val target: String) {
         SystemClock.sleep(WAVE_MILLIS)
     }
 
+    fun settleHomeTransition() {
+        SystemClock.sleep(TRANSITION_SETTLE_MILLIS)
+    }
+
     fun cancelIfRunning() {
-        device.findObject(By.desc("Stop"))?.let {
+        device.findObject(By.desc("Stop").pkg(target))?.let {
             it.click()
             node(By.desc("Start"))
         }
@@ -87,9 +91,10 @@ class TimerJourney(private val device: UiDevice, private val target: String) {
         device.executeShellCommand("am force-stop $target")
     }
 
-    private fun node(selector: BySelector): UiObject2 = checkNotNull(device.wait(Until.findObject(selector), WAIT)) {
-        "Performance journey target missing; use an unlocked English-language phone with no permission dialogs."
-    }
+    private fun node(selector: BySelector): UiObject2 =
+        checkNotNull(device.wait(Until.findObject(By.copy(selector).pkg(target)), WAIT)) {
+            "Performance journey target missing; use an unlocked English-language phone with no permission dialogs."
+        }
 
     private fun clickStartControl(selector: BySelector) {
         repeat(START_ATTEMPTS) { attempt ->
@@ -112,5 +117,6 @@ class TimerJourney(private val device: UiDevice, private val target: String) {
         const val THUMB_INSET = 0.046f
         const val SWIPE_STEPS = 40
         const val WAVE_MILLIS = 8_000L
+        const val TRANSITION_SETTLE_MILLIS = 1_000L
     }
 }

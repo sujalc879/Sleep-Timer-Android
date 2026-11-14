@@ -42,20 +42,33 @@ class FrameBenchmarks {
         }
     }
 
-    private fun frames(setup: MacrobenchmarkScope.() -> Unit, measure: MacrobenchmarkScope.() -> Unit) =
-        rule.measureRepeated(
-            packageName = BuildConfig.TARGET_PACKAGE,
-            metrics = listOf(FrameTimingMetric()),
-            compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
-            iterations = ITERATIONS,
-            setupBlock = {
-                killProcess()
-                pressHome()
-                startActivityAndWait()
-                setup()
-            },
-            measureBlock = measure,
-        )
+    @Test fun steadyCountdownAndWave() = frames(setup = {
+        journey.startLongTimer()
+        journey.settleHomeTransition()
+    }) {
+        journey.observeWave()
+    }
+
+    private fun frames(setup: MacrobenchmarkScope.() -> Unit, measure: MacrobenchmarkScope.() -> Unit) {
+        try {
+            rule.measureRepeated(
+                packageName = BuildConfig.TARGET_PACKAGE,
+                metrics = listOf(FrameTimingMetric()),
+                compilationMode = CompilationMode.Partial(BaselineProfileMode.Require),
+                iterations = ITERATIONS,
+                setupBlock = {
+                    journey.cancelIfRunning()
+                    killProcess()
+                    pressHome()
+                    startActivityAndWait()
+                    setup()
+                },
+                measureBlock = measure,
+            )
+        } finally {
+            journey.cancelIfRunning()
+        }
+    }
 
     private companion object {
         const val ITERATIONS = 5
