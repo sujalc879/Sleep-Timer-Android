@@ -1,12 +1,14 @@
 # Sleep timer — hardening test plan
 
-Updated November 12, 2026 (Asia/Kolkata). Covers every edge case in AGENTS.md §6 and the adaptive/accessibility requirements in §§7–8. Stop cancels a timer and leaves playback running. Expiry runs the guarded playback-stop pipeline.
+Updated November 14, 2026 (Asia/Kolkata). Covers every edge case in AGENTS.md §6 and the adaptive/accessibility requirements in §§7–8. Stop cancels a timer and leaves playback running. Expiry runs the guarded playback-stop pipeline.
 
 ## Evidence and result recording
 
 Every device case below starts **PENDING**. Automated references identify existing coverage, not a device pass. Record a case as PASS or FAIL only after observing it; include date, APK commit, Android/API, device, player/version, route, exact-alarm/notification access, battery mode, expected deadline, first stop attempt, confirmed stop time and any diagnostic event codes. Record NOT AVAILABLE with a reason for hardware/platform cases the phone cannot exercise. Keep failures and retests as separate entries.
 
 Current evidence is in [PROGRESS.md](PROGRESS.md). Historical Android 15 installation and repeated explicit Custom launches do not establish surface latency or background reliability. No phone was connected at the start of Phase 5. Do not infer API 37 behavior from Robolectric API 35.
+
+November 13–14 supporting checks are recorded in [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md): real profile/benchmark execution, cancellation preserving silent harness playback, and a corrected 10-second expiry with one attempt and media-session pause at +66 ms. This narrow screen-on harness check does not mark the broader real-player, volume, lifecycle, Doze or OEM cases below complete. Frame overruns were observed and remain an open failure against the performance target.
 
 Use one result row per case/player/route/configuration:
 

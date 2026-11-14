@@ -9,5 +9,6 @@
 - Countdown notification with eligible promotion, Quick Settings tile, two widgets and launcher shortcuts with replacement Undo.
 - Process-local diagnostic sharing and explicit interrupted-run explanations.
 - Release optimization, artifact audits and connected-device baseline-profile/macrobenchmark journeys.
+- Real phone-generated startup/baseline profiles; fixes for optimized database initialization and repeated alarm-delivery verification restarts.
 
-No public release has been published. Device reliability, generated app profile, measured performance, production identity and external signing remain release gates. See docs/PROGRESS.md for observed evidence.
+No public release has been published. Device reliability, final-source profile/performance confirmation, measured frame overruns, production identity and external signing remain release gates. See docs/PROGRESS.md for observed evidence.

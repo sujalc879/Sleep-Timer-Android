@@ -1,6 +1,6 @@
 # Release and performance validation
 
-Updated November 13, 2026 (Asia/Kolkata). Phase 6 host preparation is in progress. No physical release smoke, app-specific generated profile or measured performance result is implied by compilation. Carry every pending case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md) into the release decision.
+Updated November 14, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/startup profile collection pass. Connected-device evidence, including startup/readiness fixes, preliminary timings and the final controlled playback smoke, is recorded in [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md). Frame overruns remain unresolved. Carry every pending case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md) into the release decision.
 
 ## Host checks
 
@@ -11,7 +11,7 @@ export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 
 This includes debug assembly/JVM tests, lint, formatting/detekt/build-logic checks, existing native image comparisons, profile/benchmark APK compilation, release lint/APK/AAB, native artifact inspection and parser regression tests. No device, emulator or SDK download is started. Reports are in `build/reports/release/artifacts.json` and the usual module build report directories. R8 mapping/configuration are in `app/build/outputs/mapping/release/`.
 
-The report distinguishes an inherited library binary profile from **app-generated profile source**. An existing baseline.prof from dependencies is not proof that Sleep timer's journeys were collected. The stricter `verifyDistributionArtifacts` gate intentionally fails until app profile source and valid external release signing exist. See [PLAY_SUBMISSION.md](PLAY_SUBMISSION.md) for signing, version inputs and owner decisions.
+The report distinguishes an inherited library binary profile from **app-generated profile source**. An existing baseline.prof from dependencies is not proof that Sleep timer's journeys were collected. Real collected sources now pass `--require-app-profile`; the stricter `verifyDistributionArtifacts` gate still requires valid external release signing. See [PLAY_SUBMISSION.md](PLAY_SUBMISSION.md) for signing, version inputs and owner decisions.
 
 Initial host ELF checks found both `libandroidx.graphics.path.so` and `libdatastore_shared_counter.so` for arm64-v8a, armeabi-v7a, x86 and x86_64. All initial PT_LOAD alignments are 16384; APK native offsets also pass Build Tools verification:
 
@@ -45,7 +45,7 @@ adb devices -l
 adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity
 ```
 
-Require status `device`; `unauthorized` needs the phone's prompt. An empty list needs cable/port/debugging correction. The current task observed an empty list. Start music and use Home → 10 s test, then the two-minute screen-off/Doze procedure in the manual plan. A successful installation alone is not a playback pass.
+Require status `device`; `unauthorized` needs the phone's prompt. An empty list needs cable/port/debugging correction. The phone reconnected for the November 13 profile/performance work. Start music and use Home → 10 s test, then the two-minute screen-off/Doze procedure in the manual plan. A successful installation alone is not a playback pass.
 
 ## Baseline profile collection
 
@@ -57,7 +57,7 @@ The producer/benchmark targets use **com.sujal.sleeptimer.benchmark**, labelled 
 ./gradlew :app:generateBaselineProfile --console=plain
 ```
 
-The producer records startup and Settings/dial/running/extend/reduce/cancel journeys. Each running journey uses 60 minutes and cancels before ending; final cleanup force-stops only the isolated package. Inspect and commit the generated `app/src/main/generated/baselineProfiles/` files after a real successful run. Require nonempty app-package rules and preserve the source commit/device/run log. Do not hand-write a broad profile or copy dependency profiles to satisfy the gate. Build again after collection:
+The producer records startup and Settings/dial/running/extend/reduce/cancel journeys. Both passed on November 13 and reached profile stability; see the evidence report for counts/hashes. Each running journey uses 60 minutes and cancels before ending; final cleanup force-stops only the isolated package. Inspect and commit the generated `app/src/main/generated/baselineProfiles/` files after a real successful run. Require nonempty app-package rules and preserve the source commit/device/run log. Do not hand-write a broad profile or copy dependency profiles to satisfy the gate. Build again after collection:
 
 ```sh
 ./gradlew :app:assembleBenchmarkRelease :app:assembleRelease :app:bundleRelease
@@ -76,6 +76,8 @@ After app profile generation and rebuilding the benchmark target:
 
 The startup class compares ten cold launches with CompilationMode.None and a required baseline profile. Three frame tests collect dial gestures, Settings scrolling and eight seconds of visible countdown/wave with extension/reduction/cancellation. Frame setup explicitly kills/relaunches before preparing the screen; it does not use cold-start mode to kill the prepared state after setup. The tests are self-instrumenting in their own process; the target is optimized/non-debuggable/profileable.
 
+November 13 all five methods completed across reruns. Required-profile startup median was 441.65 ms with all ten samples below 500 ms, while charging. Settings/dial/running all recorded positive frame overruns; the frame target is not met. These measurements precede the November 14 readiness fix. Inspect traces, fix the cost and repeat the suite on final source under controlled battery-powered conditions; do not reuse these results as a final budget pass.
+
 Keep the connected-test report, benchmark JSON and Perfetto traces from `benchmark/build/outputs/` and `benchmark/build/reports/androidTests/`. Capture tool-reported paths instead of assuming a trace was generated. Required-profile failure, tracing setup failure, thermal warnings or an incomplete journey are failures/inconclusive runs, never timing passes. No timing error suppressions or dry-run results qualify for a budget. [Macrobenchmark reference](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview).
 
 For interrupted tests, ensure cleanup of the isolated app:
@@ -86,7 +88,7 @@ adb shell am force-stop com.sujal.sleeptimer.benchmark
 
 ## Evidence gates
 
-All device entries below are **PENDING**. Fill one row per actual configuration and retain raw evidence. Do not derive an all-frames guarantee from a good percentile alone.
+These release gates remain **OPEN**; see the device evidence report for partial results. Fill one row per actual configuration and retain raw evidence. Do not derive an all-frames guarantee from a good percentile alone. The first optimized-device run exposed a reflective WorkManager database constructor removed by R8; the constructor-specific fix applies to both production and benchmark builds. A passing host build had not caught that runtime crash.
 
 | ID | Gate | Required evidence |
 |---|---|---|
