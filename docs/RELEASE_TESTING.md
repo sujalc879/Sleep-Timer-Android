@@ -1,8 +1,10 @@
 # Release and performance validation
 
-Updated November 14, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/startup profile collection pass. Connected-device evidence, including startup/readiness fixes, preliminary timings and the final controlled playback smoke, is recorded in [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md). Frame overruns remain unresolved. Carry every pending case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md) into the release decision.
+Updated November 17, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/startup profile collection pass. Connected-device evidence, including startup/readiness fixes, preliminary timings and the controlled playback smoke, is recorded in [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md). Frame overruns remain unresolved. Carry every pending case in [MANUAL_TEST_PLAN.md](MANUAL_TEST_PLAN.md) into the release decision.
 
 [PHASE6_FRAME_ANALYSIS.md](PHASE6_FRAME_ANALYSIS.md) distinguishes queued presentation latency from dropped frames. Ten steady measured intervals have no drop/app-deadline classification, while the mixed control journey has five drops. Presentation latency, dial classification and final budgets remain open.
+
+[PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md) records the subsequent allocation change and physical before/after measurements. Both five-iteration journeys pass, but no clear frame-time gain is established; candidate trace classification is partial after a phone disconnect. Full host verification passes with 214 tests, 15 unchanged image comparisons and Robolectric 4.18. Finish remaining trace analysis/cleanup and install the current normal build when the phone reconnects.
 
 ## Host checks
 

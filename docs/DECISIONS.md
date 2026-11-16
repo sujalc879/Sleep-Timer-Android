@@ -445,6 +445,8 @@ Keep rounding, hour limits, localized digits, grouping and padding unchanged. A 
 
 Reference: [Compose guidance on remembering expensive calculations](https://developer.android.com/develop/ui/compose/performance/bestpractices#use-remember). Keys include the locale-owned formatter and rounded seconds, the inputs that affect the displayed numeric text.
 
+**November 17 outcome:** host tests/images pass; the physical interaction comparison does not establish a clear frame-time improvement (overrun P50/P99 essentially unchanged, worse maximum). Keep the bounded formatter reuse for the known repeated construction it removes; do not close performance budgets. See [PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md). Candidate frame classification is incomplete after a phone disconnect.
+
 ## D063 — Update the host test runtime when release lint discovers a stable release
 
 November 16 verification rejected Robolectric 4.17 because 4.18 is now stable. Maven Central metadata and the published 4.18 POM confirm it; update the test-only catalog pin without suppressing the dependency check. The [4.18 migration guide](https://robolectric.org/upgrade_to_version_4/#migrating-to-418) drops API 23 support (the app minimum is 26) and changes some native rendering behavior. Rerun the existing tests and image comparisons against unchanged baselines; no production dependency or SDK/JDK installation is involved.

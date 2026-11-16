@@ -61,3 +61,5 @@ Ignored evidence: `build/reports/release/frame-analysis-2026-11-14/`. This conta
 Final format/host verification **PASS**: verifyRelease in 3 s, 1,386 tasks (28 executed / 1,358 up-to-date), 212 host tests with zero failures/errors/skips; lint, Spotless/ktlint, detekt, build-logic, 15 image comparisons, nine artifact-parser tests and release audit pass. No image baseline, benchmark suppression or global analyzer threshold changed.
 
 Temporary phone analysis files were removed. No normal/benchmark TimerService or owned wake lock remained; the normal debug app was reopened. Next: inspect extension/reduction and dial traces, test presentation/dimming hypotheses, then make and measure a targeted production change. The release's other reliability/signing/platform gates remain open.
+
+November 17 continuation: [countdown formatter reuse and fresh before/after evidence](PHASE6_COUNTDOWN_FORMATTING.md). Full host checks pass, but no clear frame-time improvement is established and candidate frame classification/cleanup is partial after the phone disconnected. The earlier cleanup observation above applies to November 14.
