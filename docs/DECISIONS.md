@@ -436,3 +436,15 @@ Scope fixture node/cleanup selectors to the isolated target package, using the v
 Copy reusable selectors before adding the package constraint: pkg mutates BySelector and rejects a repeated package assignment. The pinned library's By.copy contract was exercised on the existing JDK with three repeated scoped copies, leaving the source selector unmodified, so a stale-node retry can safely reuse it.
 
 References: [FrameTimeline classifications](https://github.com/google/perfetto/blob/main/docs/data-sources/frametimeline.md), [Compose graphics guidance](https://developer.android.com/develop/ui/compose/graphics/draw/modifiers), and pinned Material 3 1.5.0-rc01 sources (CircularWavyProgressModifiers.kt already uses drawing/geometry caches).
+
+## D062 — Reuse countdown number formatting within the dial
+
+**Source audit November 16.** Every countdown update creates a two-digit NumberFormat, plus another integer formatter for hour durations. Reuse these mutable formatters inside a single composable-owned CountdownFormatter, remembered by locale; initialize the hour formatter only when needed. This scope is confined to UI composition, with no global/shared formatter cache. Cache the displayed string by its rounded whole-second value so unrelated sub-second state emissions do not repeat formatting.
+
+Keep rounding, hour limits, localized digits, grouping and padding unchanged. A locale change replaces the formatter; repeated hour/minute boundary tests guard mutable-format state. Leave end-time formatting's existing timezone/12–24-hour behavior intact. This removes known repeated allocation; physical before/after measurements are required before claiming a frame-time or dropped-frame improvement.
+
+Reference: [Compose guidance on remembering expensive calculations](https://developer.android.com/develop/ui/compose/performance/bestpractices#use-remember). Keys include the locale-owned formatter and rounded seconds, the inputs that affect the displayed numeric text.
+
+## D063 — Update the host test runtime when release lint discovers a stable release
+
+November 16 verification rejected Robolectric 4.17 because 4.18 is now stable. Maven Central metadata and the published 4.18 POM confirm it; update the test-only catalog pin without suppressing the dependency check. The [4.18 migration guide](https://robolectric.org/upgrade_to_version_4/#migrating-to-418) drops API 23 support (the app minimum is 26) and changes some native rendering behavior. Rerun the existing tests and image comparisons against unchanged baselines; no production dependency or SDK/JDK installation is involved.

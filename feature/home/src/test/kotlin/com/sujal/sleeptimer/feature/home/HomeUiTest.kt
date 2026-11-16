@@ -1,6 +1,7 @@
 package com.sujal.sleeptimer.feature.home
 
 import android.app.Application
+import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.adaptive.HingeInfo
 import androidx.compose.material3.adaptive.Posture
@@ -8,10 +9,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
@@ -35,6 +38,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.google.common.truth.Truth.assertThat
 import com.sujal.sleeptimer.core.designsystem.SleepTimerTheme
 import com.sujal.sleeptimer.core.model.TimerLimits
+import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,6 +49,24 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class, qualifiers = "w390dp-h844dp-mdpi")
 class HomeUiTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun aLocaleChangeUpdatesTheRememberedCountdownDigits() {
+        val base = Configuration(rule.activity.resources.configuration)
+        var locale by mutableStateOf(Locale.US)
+        rule.setContent {
+            val configuration = remember(locale) { Configuration(base).apply { setLocale(locale) } }
+            CompositionLocalProvider(LocalConfiguration provides configuration) {
+                SleepTimerTheme(dynamicColor = false) {
+                    HomeScreen(homeFixture().copy(durationMillis = 30 * TimerLimits.MINUTE), homeActions(), {})
+                }
+            }
+        }
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+        rule.runOnIdle { locale = Locale.forLanguageTag("ar") }
+        rule.onNodeWithText("٣٠:٠٠", useUnmergedTree = true).assertExists()
+        rule.runOnIdle { locale = Locale.US }
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+    }
 
     @Test fun aClockTickUpdatesDialAndReduceBoundaryWithoutRecomposingTheScreen() {
         val live = mutableStateOf(homeFixture().copy(runId = "run", remainingMillis = 301 * TimerLimits.SECOND))

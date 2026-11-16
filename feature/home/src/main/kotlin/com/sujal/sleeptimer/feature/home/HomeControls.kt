@@ -52,6 +52,9 @@ internal fun HomeDial(
     val current = liveState?.value ?: state
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
+    val formatter = remember(locale) { CountdownFormatter(locale) }
+    val displaySeconds = countdownSeconds(current.displayMillis)
+    val countdown = remember(formatter, displaySeconds) { formatter.format(current.displayMillis) }
     val end = stringResource(R.string.ends_at, DateFormat.getTimeFormat(context).format(Date(current.endWallMillis)))
     val endLabel = when (current.phase) {
         TimerPhase.STOPPING -> stringResource(R.string.stopping)
@@ -59,7 +62,7 @@ internal fun HomeDial(
         else -> end
     }
     val spokenMinutes = (current.displayMillis / TimerLimits.MINUTE).toInt().coerceAtLeast(1)
-    val seconds = ((current.displayMillis + TimerLimits.SECOND - 1) / TimerLimits.SECOND).toInt()
+    val seconds = displaySeconds.toInt()
     val spoken = if (current.running && current.displayMillis < TimerLimits.MINUTE) {
         pluralStringResource(R.plurals.spoken_seconds, seconds, seconds)
     } else {
@@ -69,7 +72,7 @@ internal fun HomeDial(
     SleepTimerDial(
         DialPresentation(
             minutes = (current.durationMillis / TimerLimits.MINUTE).toInt(),
-            countdown = countdown(current.displayMillis, locale),
+            countdown = countdown,
             endLabel = if (message == null) endLabel else "",
             spokenDuration = message ?: spoken,
             controlLabel = stringResource(

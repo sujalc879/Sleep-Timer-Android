@@ -102,7 +102,10 @@ class HardeningScreenshotTest {
             }
         }
         rule.mainClock.advanceTimeBy(32)
-        val text = rule.onNodeWithText(countdown(state.displayMillis, Locale.getDefault()), useUnmergedTree = true)
+        val text = rule.onNodeWithText(
+            CountdownFormatter(Locale.getDefault()).format(state.displayMillis),
+            useUnmergedTree = true,
+        )
         text.performSemanticsAction(SemanticsActions.GetTextLayoutResult) { get ->
             val layouts = mutableListOf<TextLayoutResult>()
             get(layouts)

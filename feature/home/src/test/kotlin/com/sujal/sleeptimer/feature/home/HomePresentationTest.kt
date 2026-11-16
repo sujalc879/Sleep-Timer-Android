@@ -7,14 +7,27 @@ import org.junit.Test
 
 class HomePresentationTest {
     @Test fun countdownCeilsRemainingSecondsAndDoesNotWrapHours() {
-        assertThat(countdown(1, Locale.US)).isEqualTo("00:01")
-        assertThat(countdown(30 * TimerLimits.MINUTE, Locale.US)).isEqualTo("30:00")
-        assertThat(countdown(TimerLimits.MAX_DURATION, Locale.US)).isEqualTo("12:00:00")
-        assertThat(countdown(-1, Locale.US)).isEqualTo("00:00")
+        val formatter = CountdownFormatter(Locale.US)
+        assertThat(formatter.format(1)).isEqualTo("00:01")
+        assertThat(formatter.format(30 * TimerLimits.MINUTE)).isEqualTo("30:00")
+        assertThat(formatter.format(TimerLimits.MAX_DURATION)).isEqualTo("12:00:00")
+        assertThat(formatter.format(-1)).isEqualTo("00:00")
     }
 
     @Test fun countdownUsesLocaleDigitsWithoutGrouping() {
-        assertThat(countdown(30 * TimerLimits.MINUTE, Locale.forLanguageTag("ar"))).isEqualTo("٣٠:٠٠")
+        assertThat(CountdownFormatter(Locale.forLanguageTag("ar")).format(30 * TimerLimits.MINUTE))
+            .isEqualTo("٣٠:٠٠")
+    }
+
+    @Test fun repeatedHourBoundaryFormattingKeepsPaddingAndLocaleDigits() {
+        val formatter = CountdownFormatter(Locale.forLanguageTag("ar"))
+        val hour = 60 * TimerLimits.MINUTE
+        repeat(2) {
+            assertThat(formatter.format(hour)).isEqualTo("١:٠٠:٠٠")
+            assertThat(formatter.format(hour - TimerLimits.SECOND)).isEqualTo("٥٩:٥٩")
+            assertThat(formatter.format(TimerLimits.MINUTE)).isEqualTo("٠١:٠٠")
+            assertThat(formatter.format(0)).isEqualTo("٠٠:٠٠")
+        }
     }
 
     @Test fun customInputRejectsZeroOverflowMissingAndOutOfRangeValues() {
