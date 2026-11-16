@@ -4,7 +4,7 @@ Updated November 17, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/
 
 [PHASE6_FRAME_ANALYSIS.md](PHASE6_FRAME_ANALYSIS.md) distinguishes queued presentation latency from dropped frames. Ten steady measured intervals have no drop/app-deadline classification, while the mixed control journey has five drops. Presentation latency, dial classification and final budgets remain open.
 
-[PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md) records the subsequent allocation change and physical before/after measurements. Both five-iteration journeys pass, but no clear frame-time gain is established; candidate trace classification is partial after a phone disconnect. Full host verification passes with 214 tests, 15 unchanged image comparisons and Robolectric 4.18. Finish remaining trace analysis/cleanup and install the current normal build when the phone reconnects.
+[PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md) records the subsequent allocation change and physical before/after measurements. Both five-iteration journeys pass, but no clear frame-time gain is established; complete classification after reconnection found 13 drops before vs 12 after. Full host verification passes with 214 tests, 15 unchanged image comparisons and Robolectric 4.18. Trace analysis/temporary-file cleanup are complete; the current normal build is installed and open, with its installed checksum verified and no timer/test-player service or active wake lock remaining.
 
 ## Host checks
 

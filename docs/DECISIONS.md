@@ -445,7 +445,7 @@ Keep rounding, hour limits, localized digits, grouping and padding unchanged. A 
 
 Reference: [Compose guidance on remembering expensive calculations](https://developer.android.com/develop/ui/compose/performance/bestpractices#use-remember). Keys include the locale-owned formatter and rounded seconds, the inputs that affect the displayed numeric text.
 
-**November 17 outcome:** host tests/images pass; the physical interaction comparison does not establish a clear frame-time improvement (overrun P50/P99 essentially unchanged, worse maximum). Keep the bounded formatter reuse for the known repeated construction it removes; do not close performance budgets. See [PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md). Candidate frame classification is incomplete after a phone disconnect.
+**November 17 outcome:** host tests/images pass; the physical interaction comparison does not establish a clear frame-time improvement (overrun P50/P99 essentially unchanged, worse maximum). Full measured-window classification after reconnect found 13 drops before vs 12 after, still around the controls. Keep the bounded formatter reuse for the known repeated construction it removes; do not close performance budgets. See [PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md). Analysis/cleanup and normal app installation are complete.
 
 ## D063 — Update the host test runtime when release lint discovers a stable release
 
