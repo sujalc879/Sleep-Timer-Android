@@ -1,4 +1,5 @@
 # Direct Google Maven and Maven Central metadata checked 2026-11-13.
+# Robolectric rechecked against Maven Central 2026-11-16 after release lint.
 # Material 3 is the sole prerelease exception required by AGENTS.md.
 # AGP 9 supplies built-in Kotlin; Android modules must not apply kotlin-android.
 [versions]
@@ -23,7 +24,7 @@ serialization = "1.13.0"
 junit = "4.13.2"
 truth = "1.4.5"
 turbine = "1.2.1"
-robolectric = "4.17"
+robolectric = "4.18"
 roborazzi = "1.79.0"
 androidx-test = "1.7.0"
 androidx-test-junit = "1.3.0"
