@@ -58,5 +58,5 @@ fi
 
 cd "$repo_dir"
 ./gradlew :app:assembleDebug
-"$adb_path" -s "$selected" install -r "$repo_dir/app/build/outputs/apk/debug/app-debug.apk"
+"$adb_path" -s "$selected" install --no-streaming -r "$repo_dir/app/build/outputs/apk/debug/app-debug.apk"
 "$adb_path" -s "$selected" shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity
