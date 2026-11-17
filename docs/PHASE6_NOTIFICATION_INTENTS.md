@@ -30,6 +30,8 @@ The read-only queries are `tools/performance/frame-control-binder-calls.sql` and
 
 The phone disconnected before the fresh baseline could start. The connected task failed with **No connected devices**, zero benchmark iterations; this is not a benchmark pass. No after-change frame/binder measurement or normal-app update has occurred. No speedup, reduced drop count or completed performance budget is claimed.
 
+Reconnection follow-up: after the owner replied Connected, SDK ADB 37.0.1 still listed no devices. There is no alternate ADB server socket/port environment override. Both the IOUSB plane and USB host-device inventory found no matching phone (the latter enumerated five USB devices). This needs a physical USB/data/debugging connection before another run; no comparison or installation was attempted during this follow-up. Try a data-capable cable/another port, keep the phone unlocked and accept any USB-debugging prompt, then require ADB status `device` before continuing.
+
 Ignored evidence: `build/reports/release/control-frames-2026-11-17/`. This retains trace/processor hashes, queries/CSV/import warnings, Android 15 binder-code inspection, host XML totals/logs/artifact audit and both pre-change/candidate benchmark APKs plus their unchanged test runner. The pre-change checkout is `f940ca8` (app source `03887c5`); candidate is `3149031`. The normal phone app still has the preceding formatter build. Normal app data/settings and PHONE_COMMANDS.md were preserved; no SDK/JDK/emulator/global tool was installed.
 
 ## Resume on a connected phone
