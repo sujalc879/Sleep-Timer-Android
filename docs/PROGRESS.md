@@ -14,6 +14,8 @@ Follow-up [frame analysis](PHASE6_FRAME_ANALYSIS.md) separates overrun latency f
 
 November 17 [countdown formatting work](PHASE6_COUNTDOWN_FORMATTING.md) reuses dial-owned locale formatters and remembers numeric text by rounded seconds. **214 host tests and 15 unchanged image comparisons pass**, including locale changes and reused hour-boundary formatting. Both five-iteration physical interaction benchmarks pass. Overrun P50/P99 is **9.87/19.62 ms before vs 9.90/19.79 ms after**, with a worse maximum after; no clear frame-time improvement is established. After reconnection, all ten traces are classified: **13 drops / 5,188 records before vs 12 / 5,161 after**, still around the controls. Temporary files are removed; final audit shows no timer/test-player service or active wake lock. The normal debug app is updated and open on idle Home (45:00), with data preserved and its installed APK checksum matching the build. Benchmark packages were absent on reconnect, so retrospective installed benchmark checksums are unavailable; host artifacts/reports remain retained.
 
+The next [notification intent reuse change](PHASE6_NOTIFICATION_INTENTS.md), `3149031`, addresses repeated synchronous token lookups found around the controls. The app-opening token and run/extension-specific action pair are reused; dismissal revisions and lifecycle ordering remain intact. **218 host tests, 15 unchanged image comparisons and full release checks pass.** The phone disconnected before the fresh baseline: the connected task failed with No connected devices and ran no iterations. Physical before/after measurement, three owned temporary-file removals, final device audit and installing this newer normal build remain pending. Both baseline/candidate APKs and their runner are preserved; no measured improvement is claimed.
+
 November 14 controlled playback testing exposed repeated verification restarts from two service-readiness paths. Both now use an idempotent ExecutionReady command. Phone retest on `5cb3ae5`: **one stop attempt**, +55 ms after the 10-second deadline; silent player paused at +66 ms; MEDIA_SESSION result completed at +331 ms. Fade was skipped because the route was unavailable/unsafe. That test left no timer/test-player service or owned wake lock. This does not close real-player, fade/restore, screen-off/Doze or overnight gates.
 
 ## Implemented in Phase 6 preparation
@@ -26,6 +28,7 @@ November 14 controlled playback testing exposed repeated verification restarts f
 - Made service promotion and the alarm's ensureForeground intent idempotent, preserving in-progress playback verification. Added a suspended-verification engine regression and decoder coverage on APIs 26/35. Genuine service loss/restart and access/time-change reconciliation remain covered by existing tests.
 - Added a separate steady-wave benchmark, cleanup outside measurement and target-package-scoped reusable selectors. Read-only Perfetto SQL records whole-capture/thread costs, measured-window classifications and drop/deadline offsets. Original mixed measurements remain available; no metric suppression or replacement wave implementation was introduced.
 - Reused locale-owned countdown formatters, initialized hour formatting lazily and cached numeric text by rounded seconds. Preserved rendering/digits/rounding and existing end-time behavior; added mutable-formatter boundary and locale-switch regressions. Stable Robolectric 4.18 resolves the newly outdated test pin without relaxing lint or rewriting image baselines.
+- Reused stable notification PendingIntent tokens within a bounded, synchronized run/extension cache, preserving fresh dismissal revisions and synchronous foreground/notification ordering. API 26/35 regressions cover settings changes and old/replacement-run action identities. Added read-only control-window thread/binder queries; new device comparison remains pending after disconnection.
 - Added a standard-library APK/AAB native verifier with malformed ELF, 4 KB-only, program-header, ZIP-offset and prohibited runtime descriptor regressions. All eight shipped native entries pass inspection; Build Tools zipalign independently passes. Play split-APK and actual 16 KB execution remain separate gates.
 - Isolated clock-only Home state from Route/layout/overlays. The dial consumes live state and the reduction control observes only its five-minute threshold. A Compose regression changes the countdown/control boundary while confirming no parent-screen recomposition. Physical tracing must still establish the stricter text-only invalidation/frame budgets.
 - Added `scripts/run-phone.sh`: checks a selected phone before building, resolves the existing SDK/JDK, builds debug, installs with `adb -s ... install -r` and opens MainActivity. It preserves app data, grants no optional app permission and starts no timer. Missing/unauthorized/multiple devices receive actionable instructions. Shell/no-device paths and actual November 13/14 install/open runs pass.
@@ -38,22 +41,22 @@ November 14 controlled playback testing exposed repeated verification restarts f
 |---|---|
 | Existing runtime/toolchain | Gradle **9.9.1**, launcher/daemon JDK **17.0.20.1**, existing SDK 37.0 / Build Tools 36.0.0 |
 | `./gradlew formatAll --console=plain` | **PASS** under the new wrapper |
-| `./gradlew verifyRelease :app:assembleBenchmarkRelease --no-build-cache --continue --console=plain` | **PASS**, November 17, BUILD SUCCESSFUL in 2 s; 1,435 tasks: 21 executed / 1,414 up-to-date; stale generated catalog lint analysis recomputed |
-| Final `./gradlew formatAll verifyRelease --continue --console=plain` | **PASS** after reconnect follow-up, 1 s; 1,431 tasks: 24 executed / 1,407 up-to-date; ordinary cache path passes after lint refresh |
+| `./gradlew verifyRelease :app:assembleBenchmarkRelease --continue --console=plain` | **PASS** after notification intent reuse, November 17, 1 min 8 s; 1,440 tasks: 100 executed / 3 from cache / 1,337 up-to-date |
+| Final `./gradlew formatAll verifyRelease --continue --console=plain` | **PASS** after notification intent reuse, 4 s; 1,436 tasks: 25 executed / 1,411 up-to-date; ordinary cache path passes |
 | Required checks within verifyRelease | Debug assembly, all JVM/Android-host tests, lintDebug, Spotless/ktlint, detekt, build-logic checks, image comparisons, profiling test APK compilation, release lint/APK/AAB and artifact audit |
-| Host XML | **214 passed**, zero failures/errors/skips; includes readiness/decoder, formatter reuse and locale-switch regressions |
+| Host XML | **218 passed**, zero failures/errors/skips; includes readiness/decoder, formatting/locale and API 26/35 notification run/settings regressions |
 | Artifact-verifier tests | **9 passed**, including 32/64-bit header bounds, alignment/congruence, positive/negative ZIP layout and prohibited DEX markers |
 | Image comparisons | **15 passed**; established images unchanged, no baseline regeneration |
 | Actual profiling target APK builds | **PASS**, `:app:assembleBenchmarkRelease :app:assembleNonMinifiedRelease`, 58 s; correct isolated package/profileable/non-debuggable flags; self-instrumenting runner package bindings inspected |
-| Optimized production artifacts | Latest unsigned APK **3,143,023 bytes**; AAB **6,625,013 bytes** after formatter reuse; these are artifact bytes, not measured Play downloads |
+| Optimized production artifacts | Latest unsigned APK **3,143,023 bytes**; AAB **6,625,470 bytes** after intent reuse; these are artifact bytes, not measured Play downloads |
 | Native code | 8 matching APK/AAB ELF entries, initial PT_LOAD alignments all 16384; uncompressed APK native ZIP offsets pass verifier and `zipalign -c -P 16 4` |
 | Production flags/permissions/dependencies | Not debuggable/profileable; allowlist passes, no INTERNET/USE_EXACT_ALARM/REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or debug storage permissions; debug/benchmark dependencies absent from release runtime graph |
 | Distribution guard paths | Missing app profile was **rejected as expected** before collection; `--require-app-profile` now **PASS**; absent upload signing and deliberately partial non-secret signing inputs were **rejected as expected** |
 | App-specific baseline/startup profile | **PASS** on the Moto / API 35: 2 producer tests, zero failures/errors/skips; generated sources contain 1,977 / 1,129 app-package rules, with dependency rules also retained |
-| Device benchmark execution | Earlier five methods and mixed/steady diagnostics pass; November 17 formatter before/after **PASS**, five iterations each, ten further traces retained |
+| Device benchmark execution | Earlier methods/formatter comparison pass; new intent-reuse baseline **FAILED: No connected devices**, zero iterations; comparison pending |
 | Measured performance | Preliminary cold samples all <500 ms; earlier steady windows have no drops across 9,567 records; fresh mixed baseline/candidate have 13/12 drops across 5,188/5,161 records; overruns essentially unchanged and budgets **OPEN** |
 | Controlled playback smoke | Cancellation leaves playback active; final 10-second expiry pauses silent GOOD player at +66 ms, one attempt, MEDIA_SESSION result; physical fade/restore and real-player/Doze remain untested |
-| Phone helper | Latest formatter debug build installed/opened after reconnection; data preserved, installed APK checksum matches local, idle Home visually verified at 45:00 |
+| Phone helper | Preceding formatter build installed/opened and verified at 45:00; newest notification-intent build ready locally, update pending phone reconnection |
 | SDK local path | local.properties remains ignored and untracked |
 | Remaining performance/device/signing/Play gates | **OPEN**, as listed in RELEASE_TESTING and PLAY_SUBMISSION |
 
@@ -66,6 +69,8 @@ Phase 6 preparation source commits: `49db628` Gradle patch; `cc6fe51` clock comp
 Connected continuation: `7c427f2` fresh frame setup; `acbd97d` reflective database constructor; `1c8c3ab` real collected profiles; `bc93b8b` stale timer-start handles; `5cb3ae5` idempotent service readiness.
 
 Frame diagnostics: `147188c` steady measurement, isolated reusable selectors and read-only frame classification queries. Countdown formatting: `215a5f0` host runtime pin; `03887c5` production optimization/regressions. The normal phone installation includes this update.
+
+Notification follow-up: `cfb6734` control-window queries; `3149031` token reuse/regressions. The normal phone installation does not yet include this change.
 
 ## Implemented in Phase 5
 
@@ -273,4 +278,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Investigate extension/reduction at the retained drop offsets, classify dial frames and test presentation/dimming hypotheses; formatter reuse has not established a frame-budget gain. Analysis, temporary-file cleanup and the normal app update are complete. Use `bash ./scripts/run-phone.sh` to rebuild/update/open the app again. Continue the real-player two-minute screen-off/forced-Doze Spotify case and remaining manual/16 KB/runtime gates. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or any Play upload. Phase 6 remains open until those gates have evidence.
+After reconnection, compare the preserved pre-change/candidate APKs for notification intent reuse, classify measured frames and control binder calls, remove the three owned controls-analysis files and audit services/wakes. Update/open the normal app only after confirming no user timer is active; `bash ./scripts/run-phone.sh` rebuilds/installs/opens it. Continue dial/presentation/dimming investigation and the real-player two-minute screen-off/forced-Doze Spotify case plus remaining manual/16 KB/runtime gates. Neither source optimization has established a frame-budget pass. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or any Play upload. Phase 6 remains open until those gates have evidence.

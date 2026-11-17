@@ -6,6 +6,8 @@ Updated November 17, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/
 
 [PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md) records the subsequent allocation change and physical before/after measurements. Both five-iteration journeys pass, but no clear frame-time gain is established; complete classification after reconnection found 13 drops before vs 12 after. Full host verification passes with 214 tests, 15 unchanged image comparisons and Robolectric 4.18. Trace analysis/temporary-file cleanup are complete; the current normal build is installed and open, with its installed checksum verified and no timer/test-player service or active wake lock remaining.
 
+The later [notification intent reuse](PHASE6_NOTIFICATION_INTENTS.md) removes repeated stable token lookups found in those control traces. Current host/release verification passes with 218 tests and 15 image comparisons. Its fresh physical baseline failed with No connected devices; the newer app update, comparison and three temporary-file removals are pending. The earlier phone cleanup/install observation applies to the formatter build.
+
 ## Host checks
 
 ```sh
