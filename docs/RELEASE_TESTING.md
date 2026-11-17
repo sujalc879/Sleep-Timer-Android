@@ -6,7 +6,7 @@ Updated November 17, 2026 (Asia/Kolkata). Phase 6 host checks and real baseline/
 
 [PHASE6_COUNTDOWN_FORMATTING.md](PHASE6_COUNTDOWN_FORMATTING.md) records the subsequent allocation change and physical before/after measurements. Both five-iteration journeys pass, but no clear frame-time gain is established; complete classification after reconnection found 13 drops before vs 12 after. Full host verification passes with 214 tests, 15 unchanged image comparisons and Robolectric 4.18. Trace analysis/temporary-file cleanup are complete; the current normal build is installed and open, with its installed checksum verified and no timer/test-player service or active wake lock remaining.
 
-The later [notification intent reuse](PHASE6_NOTIFICATION_INTENTS.md) removes repeated stable token lookups found in those control traces. Current host/release verification passes with 218 tests and 15 image comparisons. Its fresh physical baseline failed with No connected devices; the newer app update, comparison and three temporary-file removals are pending. The earlier phone cleanup/install observation applies to the formatter build.
+The later [notification intent reuse](PHASE6_NOTIFICATION_INTENTS.md) has a completed physical comparison: 60 → 15 intent lookups, but overall synchronous binder wall time is flat and measured windows still contain 17 / 12 drops with one app-deadline miss per source. Both five-iteration executions and all 218 host tests / 15 image comparisons pass. The current normal app is installed/open, owned files/session/test packages are removed, and no timer/test-player service or active wake lock remains. Failed pre-measurement deployments are retained separately; no frame-budget pass is claimed.
 
 ## Host checks
 
@@ -35,7 +35,7 @@ Connect an unlocked phone with a USB data cable, enable Developer options → US
 ./scripts/run-phone.sh
 ```
 
-The helper checks the phone before building, selects the existing local SDK/JDK, builds the debug APK, updates that selected device while preserving app data, and opens MainActivity. It does not grant optional app permissions or start a timer. If no phone is detected, it prints the connection steps instead of running Gradle installation. For multiple phones:
+The helper checks the phone before building, selects the existing local SDK/JDK, builds the debug APK, updates that selected device with non-streaming replacement while preserving app data, and opens MainActivity. It does not grant optional app permissions or start a timer. If no phone is detected, it prints the connection steps instead of running Gradle installation. For multiple phones:
 
 ```sh
 ANDROID_SERIAL=YOUR_DEVICE_SERIAL ./scripts/run-phone.sh
@@ -47,7 +47,8 @@ Equivalent direct commands:
 export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 adb devices -l
-./gradlew :app:installDebug
+./gradlew :app:assembleDebug
+adb install --no-streaming -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -W -n com.sujal.sleeptimer.debug/com.sujal.sleeptimer.MainActivity
 ```
 

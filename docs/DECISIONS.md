@@ -459,4 +459,14 @@ Remember the app-opening token for the controller lifetime. Retain only one pair
 
 Reference: [PendingIntent identity and reuse](https://developer.android.com/reference/android/app/PendingIntent), including matching operations and FLAG_UPDATE_CURRENT's treatment of extras. These factories are already used by the app; no dependency or platform API change is needed.
 
-**Verification:** all 218 host tests, 15 unchanged image comparisons and release checks pass. The fresh baseline attempt failed with No connected devices; before/after physical measurement and the normal phone update remain pending. See [PHASE6_NOTIFICATION_INTENTS.md](PHASE6_NOTIFICATION_INTENTS.md). No frame improvement is claimed from the source change alone.
+**Initial verification:** all 218 host tests, 15 unchanged image comparisons and release checks pass. The first fresh baseline attempt failed with No connected devices, leaving measurement/update pending at that point. See [PHASE6_NOTIFICATION_INTENTS.md](PHASE6_NOTIFICATION_INTENTS.md). No frame improvement was claimed from the source change alone.
+
+**Physical follow-up:** both five-iteration executions pass after reconnection. Whole-control-phase intent lookup transactions are 60 before / 15 after, with 15 notification posts in both. Overall synchronous binder wall time is essentially unchanged (116.58 / 116.62 ms); frame records still contain 17 / 12 drops and one app-deadline miss per source. The targeted lookup reduction is confirmed; the frame budget stays open. The normal app update and owned-resource cleanup are complete.
+
+## D065 — Use the existing SDK's non-streaming installation as a transport fallback
+
+The normal 17.03 MiB debug APK and 48.81 MiB runner can be deployed by the existing SDK's `adb install --no-streaming -r` after a CLI streaming attempt lost its connection at install-commit. Native and session-only LIBUSB backend attempts had both failed; restore the original NATIVE backend. USB debugging was then restarted, and non-streaming normal/runner installs plus the full comparison succeeded. These changes do not prove the cause of the previous USB failures.
+
+Preserve normal app data and check for an active user timer before replacement. Verify installed APK hashes, reuse an already matching test runner, retain failed deployment evidence and abandon only the known owned installer session. Wake-key inputs during installation/offline analysis keep the current test session usable without changing global power settings; do not inject them during measured intervals. Remove isolated test apps/output only after retaining and checking the evidence. No SDK/tool installation or shell-profile edit is required. Reference: [ADB install/backend options](https://android.googlesource.com/platform/packages/modules/adb/+/refs/heads/main/docs/user/adb.1.md).
+
+Use the verified non-streaming flag in scripts/run-phone.sh as well, retaining its existing device/JDK/SDK guards, data preservation and no-permission/no-timer behavior. This makes the owner's repeatable command match the observed successful deployment method.
