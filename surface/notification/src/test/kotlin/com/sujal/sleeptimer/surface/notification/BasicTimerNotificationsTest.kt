@@ -151,6 +151,62 @@ class BasicTimerNotificationsTest {
     }
 
     @Test
+    @Config(sdk = [26, 35])
+    fun changedExtensionSettingsUpdateTheDeliveredActionAmount() = runTest {
+        val factory = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        factory.settingsChanged(AppSettings(extendMillis = 5 * TimerLimits.MINUTE))
+        val first = factory.foreground(running())
+        assertThat(shadowOf(first.actions[0].actionIntent).savedIntent.getLongExtra(TimerServiceIntents.DELTA, -1))
+            .isEqualTo(5 * TimerLimits.MINUTE)
+
+        factory.settingsChanged(AppSettings(extendMillis = 20 * TimerLimits.MINUTE))
+        val updated = factory.foreground(running())
+        assertThat(updated.actions[0].title.toString()).isEqualTo("+20 min")
+        val delivered = shadowOf(updated.actions[0].actionIntent).savedIntent
+        assertThat(delivered.getLongExtra(TimerServiceIntents.DELTA, -1)).isEqualTo(20 * TimerLimits.MINUTE)
+        assertThat(delivered.getStringExtra(TimerServiceIntents.EXPECTED_RUN)).isEqualTo("run-1")
+        assertThat(delivered.hasExtra(TimerServiceIntents.COMMAND_ID)).isFalse()
+    }
+
+    @Test
+    @Config(sdk = [26, 35])
+    fun replacementRunDoesNotRetargetRetainedActionsAndDismissalRevisionStaysFresh() = runTest {
+        val factory = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        val previous = factory.foreground(running())
+        val replacement = running().let {
+            it.copy(snapshot = it.snapshot.copy(run = it.snapshot.run!!.copy(id = "run-2")))
+        }
+        val current = factory.foreground(replacement)
+        previous.actions.forEach {
+            assertThat(shadowOf(it.actionIntent).savedIntent.getStringExtra(TimerServiceIntents.EXPECTED_RUN))
+                .isEqualTo("run-1")
+        }
+        current.actions.forEachIndexed { index, action ->
+            assertThat(shadowOf(action.actionIntent).savedIntent.getStringExtra(TimerServiceIntents.EXPECTED_RUN))
+                .isEqualTo("run-2")
+            assertThat(action.actionIntent).isNotEqualTo(previous.actions[index].actionIntent)
+        }
+        val revised = factory.foreground(replacement.copy(snapshot = replacement.snapshot.copy(revision = 9)))
+        val dismiss = shadowOf(revised.deleteIntent).savedIntent
+        assertThat(dismiss.getStringExtra(TimerServiceIntents.EXPECTED_RUN)).isEqualTo("run-2")
+        assertThat(dismiss.getLongExtra("revision", -1)).isEqualTo(9)
+    }
+
+    @Test
     fun noPlaybackAndLocalOnlyResultsNeverClaimRemotePlayerSuccess() = runTest {
         val factory =
             BasicTimerNotifications(

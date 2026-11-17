@@ -450,3 +450,11 @@ Reference: [Compose guidance on remembering expensive calculations](https://deve
 ## D063 — Update the host test runtime when release lint discovers a stable release
 
 November 16 verification rejected Robolectric 4.17 because 4.18 is now stable. Maven Central metadata and the published 4.18 POM confirm it; update the test-only catalog pin without suppressing the dependency check. The [4.18 migration guide](https://robolectric.org/upgrade_to_version_4/#migrating-to-418) drops API 23 support (the app minimum is 26) and changes some native rendering behavior. Rerun the existing tests and image comparisons against unchanged baselines; no production dependency or SDK/JDK installation is involved.
+
+## D064 — Reuse stable notification PendingIntent tokens within a bounded run cache
+
+The retained November 16 control trace has four synchronous 0x40 binder calls per notification rebuild, followed by a 0x07 post. The cached Android 15 framework maps these to getIntentSenderWithFeature and enqueueNotificationWithTag; the sequence agrees with the content/delete/extend/stop factories in BasicTimerNotifications. This identifies avoidable repeated lookups, not the cause of every dropped frame. Notification posting, composition, layout and buffer waits remain measurable costs.
+
+Remember the app-opening token for the controller lifetime. Retain only one pair of running action tokens, keyed by run ID and Extend by; replace it on either change. Protect this bounded cache because the service and configuration observer can call the controller on different threads. Do not cache the revision-bearing dismissal token. Preserve explicit immutable intents, URI identities, flags and per-delivery command IDs. Keep foreground promotion and notification ordering synchronous; moving posting to an uncoordinated worker could race cancellation or service destruction. Test settings/run changes and measure the same interaction journey before/after; do not close a frame budget from token reuse alone.
+
+Reference: [PendingIntent identity and reuse](https://developer.android.com/reference/android/app/PendingIntent), including matching operations and FLAG_UPDATE_CURRENT's treatment of extras. These factories are already used by the app; no dependency or platform API change is needed.

@@ -45,6 +45,8 @@ class BasicTimerNotifications(
 ) : TimerNotifications {
     private val manager = context.getSystemService(NotificationManager::class.java)
     private val storedSettings = settingsStore.data.stateIn(scope, SharingStarted.Eagerly, AppSettings())
+    private val actionLock = Any()
+    private var cachedActions: RunningActions? = null
 
     @Volatile private var explicitSettings: AppSettings? = null
     private val preferences: AppSettings get() = explicitSettings ?: storedSettings.value
@@ -184,6 +186,7 @@ class BasicTimerNotifications(
         val fraction = remaining.toDouble() / run.totalDurationMillis.coerceAtLeast(1)
         val progress = (fraction * PROGRESS_MAX).toInt().coerceIn(0, PROGRESS_MAX)
         val extend = preferences.extendMillis
+        val actions = runningActions(run.id, extend)
         applyPromotion(builder, progress)
         return builder.setContentTitle(title).setContentText(description)
             .setWhen(endWall).setShowWhen(true).setUsesChronometer(remaining > 0).setChronometerCountDown(true)
@@ -192,9 +195,9 @@ class BasicTimerNotifications(
             .addAction(
                 0,
                 context.getString(R.string.extend_action, extend / TimerLimits.MINUTE),
-                action(run.id, TimerServiceIntents.EXTEND, extend),
+                actions.extendIntent,
             )
-            .addAction(0, context.getString(R.string.stop_action), action(run.id, TimerServiceIntents.CANCEL, 0))
+            .addAction(0, context.getString(R.string.stop_action), actions.stopIntent)
             .build()
     }
 
@@ -218,15 +221,26 @@ class BasicTimerNotifications(
     }
 
     private fun base(channel: String): NotificationCompat.Builder = NotificationCompat.Builder(context, channel)
-        .setSmallIcon(R.drawable.ic_timer_moon).setContentIntent(contentIntent()).setSilent(true)
+        .setSmallIcon(R.drawable.ic_timer_moon).setContentIntent(contentIntent).setSilent(true)
         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-    private fun contentIntent(): PendingIntent = PendingIntent.getActivity(
-        context,
-        0,
-        Intent().setComponent(activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-        FLAGS,
-    )
+    private val contentIntent: PendingIntent by lazy {
+        PendingIntent.getActivity(
+            context,
+            0,
+            Intent().setComponent(activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            FLAGS,
+        )
+    }
+
+    private fun runningActions(runId: String, extendMillis: Long): RunningActions = synchronized(actionLock) {
+        cachedActions?.takeIf { it.runId == runId && it.extendMillis == extendMillis } ?: RunningActions(
+            runId,
+            extendMillis,
+            action(runId, TimerServiceIntents.EXTEND, extendMillis),
+            action(runId, TimerServiceIntents.CANCEL, 0),
+        ).also { cachedActions = it }
+    }
 
     private fun action(runId: String, action: String, delta: Long): PendingIntent {
         val intent = TimerServiceIntents.base(context, action)
@@ -263,6 +277,13 @@ class BasicTimerNotifications(
             false
         }
     }
+
+    private data class RunningActions(
+        val runId: String,
+        val extendMillis: Long,
+        val extendIntent: PendingIntent,
+        val stopIntent: PendingIntent,
+    )
 
     private companion object {
         const val RUNNING_CHANNEL = "timer_running"
