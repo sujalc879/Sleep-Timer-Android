@@ -9,6 +9,7 @@ import com.sujal.sleeptimer.core.model.TimerPhase
 data class HomeUiState(
     val initialized: Boolean = false,
     val phase: TimerPhase = TimerPhase.IDLE,
+    val cancelling: Boolean = false,
     val runId: String? = null,
     val durationMillis: Long = TimerLimits.DEFAULT_DURATION,
     val remainingMillis: Long = 0,

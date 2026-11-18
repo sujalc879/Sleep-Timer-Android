@@ -12,6 +12,7 @@ import com.sujal.sleeptimer.core.model.StartSource
 import com.sujal.sleeptimer.core.model.TimerCommand
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.isActive
+import com.sujal.sleeptimer.core.model.isCancelling
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -175,7 +176,7 @@ class TimerService : Service() {
                 val snapshot = state.snapshot
                 val run = snapshot.run
                 val presentation = "${run?.id}:${snapshot.phase}:${run?.endElapsed}:${state.degradedReason}:" +
-                    "${preferences.fadeMillis}:${preferences.extendMillis}"
+                    "${preferences.fadeMillis}:${preferences.extendMillis}:${snapshot.isCancelling}"
                 if (snapshot.isActive && presentation != lastPresentation) {
                     lastPresentation = presentation
                     notifications.refresh(state, stateChanged = true)

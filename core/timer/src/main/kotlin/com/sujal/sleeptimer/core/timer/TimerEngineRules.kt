@@ -27,6 +27,7 @@ import com.sujal.sleeptimer.core.model.WakeLease
 import com.sujal.sleeptimer.core.model.WakeLocks
 import com.sujal.sleeptimer.core.model.WarningMode
 import com.sujal.sleeptimer.core.model.isActive
+import com.sujal.sleeptimer.core.model.isCancelling
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
@@ -56,9 +57,6 @@ internal fun TimerCommand.deliveryId(): String? = when (this) {
 }
 
 internal fun TimerSnapshot.remember(id: String): List<String> = (acceptedCommandIds + id).takeLast(COMMAND_HISTORY)
-internal val TimerSnapshot.isCancelling: Boolean
-    get() = phase == TimerPhase.STOPPING && lastResult?.status == StopStatus.CANCELLED && run != null
-
 internal fun finalWindow(run: TimerRun, settings: AppSettings): Long {
     val warning = if (warningEnabled(run, settings)) TimerLimits.MINUTE else 0
     val fade = settings.fadeMillis.coerceAtMost(if (run.isTest) TEST_FADE_CAP else run.totalDurationMillis)

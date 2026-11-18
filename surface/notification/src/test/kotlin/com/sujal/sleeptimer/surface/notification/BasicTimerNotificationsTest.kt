@@ -10,6 +10,7 @@ import com.google.common.truth.Truth.assertThat
 import com.sujal.sleeptimer.core.model.AppSettings
 import com.sujal.sleeptimer.core.model.Clock
 import com.sujal.sleeptimer.core.model.Diagnostics
+import com.sujal.sleeptimer.core.model.OutputRoute
 import com.sujal.sleeptimer.core.model.SettingsStore
 import com.sujal.sleeptimer.core.model.StartSource
 import com.sujal.sleeptimer.core.model.StopResult
@@ -19,6 +20,7 @@ import com.sujal.sleeptimer.core.model.TimerPhase
 import com.sujal.sleeptimer.core.model.TimerRun
 import com.sujal.sleeptimer.core.model.TimerSnapshot
 import com.sujal.sleeptimer.core.model.TimerUiState
+import com.sujal.sleeptimer.core.model.VolumeRecord
 import com.sujal.sleeptimer.core.timer.TimerServiceIntents
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
@@ -227,6 +229,83 @@ class BasicTimerNotificationsTest {
         assertThat(
             manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE),
         ).isEqualTo("Local playback stopped")
+    }
+
+    @Test fun cancellationWithoutFadeKeepsTheOngoingNotificationUntilServiceRemoval() = runTest {
+        val factory = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        val manager = context.getSystemService(NotificationManager::class.java)
+        val active = running()
+        factory.refresh(active, stateChanged = true)
+        val original = manager.activeNotifications.single().notification
+        val cancelling = active.copy(
+            snapshot = active.snapshot.copy(phase = TimerPhase.STOPPING, lastResult = StopResult(StopStatus.CANCELLED)),
+        )
+        factory.refresh(cancelling, stateChanged = true)
+        factory.refresh(cancelling, stateChanged = false)
+        assertThat(manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
+            .isEqualTo(original.extras.getString(Notification.EXTRA_TITLE))
+
+        // A genuine expiry still needs its STOPPING update, even without a fade record.
+        factory.refresh(cancelling.copy(snapshot = cancelling.snapshot.copy(lastResult = null)), stateChanged = true)
+        assertThat(manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
+            .isEqualTo("Stopping playback")
+    }
+
+    @Test fun cancellationWithFadeRecoveryStillUpdatesTheNotification() = runTest {
+        val factory = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        val active = running()
+        val fade = VolumeRecord(5, 1, 3, OutputRoute("speaker"), 0, TimerLimits.RESTORE_WINDOW)
+        val manager = context.getSystemService(NotificationManager::class.java)
+        factory.refresh(active.copy(snapshot = active.snapshot.copy(phase = TimerPhase.STOPPING)), stateChanged = true)
+        assertThat(manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
+            .isEqualTo("Stopping playback")
+        factory.refresh(
+            active.copy(
+                snapshot = active.snapshot.copy(
+                    phase = TimerPhase.STOPPING,
+                    run = active.snapshot.run!!.copy(fade = fade),
+                    lastResult = StopResult(StopStatus.CANCELLED),
+                ),
+            ),
+            stateChanged = true,
+        )
+        assertThat(manager.activeNotifications.single().notification.extras.getString(Notification.EXTRA_TITLE))
+            .isEqualTo("Canceling timer")
+    }
+
+    @Test
+    @Config(sdk = [26, 35])
+    fun foregroundPromotionDistinguishesCancellationFromExpiry() = runTest {
+        val factory = BasicTimerNotifications(
+            context,
+            clock,
+            ComponentName(context, "MainActivity"),
+            store,
+            backgroundScope,
+            Diagnostics {},
+        )
+        val stopping = running().let { it.copy(snapshot = it.snapshot.copy(phase = TimerPhase.STOPPING)) }
+        assertThat(
+            factory.foreground(stopping).extras.getString(Notification.EXTRA_TITLE),
+        ).isEqualTo("Stopping playback")
+        val cancelling = stopping.copy(snapshot = stopping.snapshot.copy(lastResult = StopResult(StopStatus.CANCELLED)))
+        assertThat(
+            factory.foreground(cancelling).extras.getString(Notification.EXTRA_TITLE),
+        ).isEqualTo("Canceling timer")
     }
 
     private fun running(): TimerUiState = TimerUiState(

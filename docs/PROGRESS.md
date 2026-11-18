@@ -1,10 +1,12 @@
 # Progress
 
-Last updated: 2026-11-17 (Asia/Kolkata).
+Last updated: 2026-11-19 (Asia/Kolkata).
 
 ## Current position
 
 **Phase 6 release preparation and real app-profile collection pass. Phase 6 is not complete:** measured performance budgets, physical reliability/16 KB/signed-candidate smoke, production identity and external upload signing remain open. This task did not upload or publish a release. Stop cancels the timer and leaves playback running; expiry performs the playback-stop pipeline.
+
+November 19 [cancellation notification work](PHASE6_CANCELLATION_NOTIFICATIONS.md) removes the unnecessary no-fade cancellation replacement, while retaining normal-expiry and fade-recovery updates. Cancellation is labeled Canceling timer in Home and notifications, including cancellation during an existing STOPPING pipeline. The shared predicate has identical logic and no serialized schema change; foreground-service/audio lifetimes are unchanged. All **223 host tests and 15 unchanged image comparisons** pass. Both five-iteration physical runs pass: posts are **15 → 10** and synchronous control binder wall time **127.02 → 100.85 ms**. Overall frame performance did not improve: **10 drops / 5,221 measured records before vs 12 / 5,215 after**, app-deadline misses **0 / 1**, with worse raw overrun percentiles and an unusually large first candidate raw sample list. Retained failed attempts exposed persisted benchmark-timer cleanup and inspection/instrumentation conflicts; see the report. The normal app is updated/open on idle Home, data/hash verified, with owned test apps/files removed and no timer/test-player service or active wake lock. Working changes remain uncommitted for review.
 
 The Moto g54 5G / Android 15 connected on November 13. Both real profile journeys passed and reached stability; generated baseline/startup sources are retained. The first optimized benchmark attempt exposed a WorkManager database-constructor retention crash; a specific constructor keep rule fixes initialization and profile-install delivery. The normal app's data and the owner's PHONE_COMMANDS.md are preserved. See [PHASE6_DEVICE_RESULTS.md](PHASE6_DEVICE_RESULTS.md) for evidence and limitations.
 
@@ -46,17 +48,17 @@ November 14 controlled playback testing exposed repeated verification restarts f
 | `./gradlew verifyRelease :app:assembleBenchmarkRelease --continue --console=plain` | **PASS** after notification intent reuse, November 17, 1 min 8 s; 1,440 tasks: 100 executed / 3 from cache / 1,337 up-to-date |
 | Final `./gradlew formatAll verifyRelease --continue --console=plain` | **PASS** after physical verification/helper update, 2 s; 1,431 tasks: 24 executed / 1,407 up-to-date |
 | Required checks within verifyRelease | Debug assembly, all JVM/Android-host tests, lintDebug, Spotless/ktlint, detekt, build-logic checks, image comparisons, profiling test APK compilation, release lint/APK/AAB and artifact audit |
-| Host XML | **218 passed**, zero failures/errors/skips; includes readiness/decoder, formatting/locale and API 26/35 notification run/settings regressions |
+| Host XML | **223 passed**, zero failures/errors/skips; includes readiness/decoder, formatting/locale, cancellation/recovery copy and API 26/35 notification regressions |
 | Artifact-verifier tests | **9 passed**, including 32/64-bit header bounds, alignment/congruence, positive/negative ZIP layout and prohibited DEX markers |
 | Image comparisons | **15 passed**; established images unchanged, no baseline regeneration |
 | Actual profiling target APK builds | **PASS**, `:app:assembleBenchmarkRelease :app:assembleNonMinifiedRelease`, 58 s; correct isolated package/profileable/non-debuggable flags; self-instrumenting runner package bindings inspected |
-| Optimized production artifacts | Latest unsigned APK **3,143,023 bytes**; AAB **6,625,472 bytes** after intent reuse; these are artifact bytes, not measured Play downloads |
+| Optimized production artifacts | Latest unsigned APK **3,143,435 bytes**; AAB **6,625,763 bytes** after cancellation notification work; these are artifact bytes, not measured Play downloads |
 | Native code | 8 matching APK/AAB ELF entries, initial PT_LOAD alignments all 16384; uncompressed APK native ZIP offsets pass verifier and `zipalign -c -P 16 4` |
 | Production flags/permissions/dependencies | Not debuggable/profileable; allowlist passes, no INTERNET/USE_EXACT_ALARM/REQUEST_IGNORE_BATTERY_OPTIMIZATIONS or debug storage permissions; debug/benchmark dependencies absent from release runtime graph |
 | Distribution guard paths | Missing app profile was **rejected as expected** before collection; `--require-app-profile` now **PASS**; absent upload signing and deliberately partial non-secret signing inputs were **rejected as expected** |
 | App-specific baseline/startup profile | **PASS** on the Moto / API 35: 2 producer tests, zero failures/errors/skips; generated sources contain 1,977 / 1,129 app-package rules, with dependency rules also retained |
-| Device benchmark execution | Earlier methods/formatter comparison pass; intent baseline/candidate each **PASS**, one test/five iterations, ten traces; earlier pre-measurement failures retained |
-| Measured performance | Latest mixed comparison has 17/12 drops across 5,220/5,237 records and one app-deadline miss per source; lookup calls 60/15, overall binder wall time flat; budgets **OPEN** |
+| Device benchmark execution | Cancellation baseline/candidate each **PASS**, one test/five iterations, ten traces; failed node/persisted-timer/automation attempts retained separately |
+| Measured performance | Latest mixed comparison has 10/12 drops across 5,221/5,215 records, app-deadline misses 0/1; posts 15/10 and control binder wall time 127.02/100.85 ms, while raw frame percentiles worsen; budgets **OPEN** |
 | Controlled playback smoke | Cancellation leaves playback active; final 10-second expiry pauses silent GOOD player at +66 ms, one attempt, MEDIA_SESSION result; physical fade/restore and real-player/Doze remain untested |
 | Phone helper | Shell syntax and actual non-streaming build/install/open **PASS**; current app open on idle Home, data/hash verified; temporary test packages/files removed |
 | SDK local path | local.properties remains ignored and untracked |
@@ -280,4 +282,4 @@ Allow notifications in Android app settings to see ongoing controls/results. [PH
 
 ## Next step
 
-Investigate remaining main-thread notification-post/service-teardown waits and text/layout work around the control drops, then dial/presentation/dimming behavior. Refresh final profiles and rerun controlled performance tests after further changes. The normal app is updated and comparison/cleanup are complete; use `bash ./scripts/run-phone.sh` to rebuild/update/open it again. Continue the real-player two-minute screen-off/forced-Doze Spotify case and remaining volume/routes, overnight/OEM, API 37 and actual 16 KB/manual gates. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or Play upload. Phase 6 remains open until those gates have evidence.
+Fix failed-journey cleanup so a persisted isolated timer is canceled after reopening, and keep inspection instrumentation closed during benchmarks. Inspect the unusually large first candidate raw frame sample list and remaining notification-post/service-teardown/text-layout waits; preserve the measured-window classifications and raw metrics. Refresh final profiles and rerun the full controlled performance suite after further changes. The normal app is updated and comparison/cleanup are complete; use `bash ./scripts/run-phone.sh` to rebuild/update/open it again. Continue the real-player two-minute screen-off/forced-Doze Spotify case and remaining volume/routes, overnight/OEM, API 37 and actual 16 KB/manual gates. The owner must confirm permanent identity/privacy contact and supply external upload signing before a reviewed signed candidate or Play upload. Phase 6 remains open until those gates have evidence.

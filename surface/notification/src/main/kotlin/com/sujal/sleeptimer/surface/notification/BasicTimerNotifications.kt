@@ -25,6 +25,7 @@ import com.sujal.sleeptimer.core.model.StopStatus
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.TimerPhase
 import com.sujal.sleeptimer.core.model.TimerUiState
+import com.sujal.sleeptimer.core.model.isCancelling
 import com.sujal.sleeptimer.core.timer.TimerNotificationIds
 import com.sujal.sleeptimer.core.timer.TimerNotifications
 import com.sujal.sleeptimer.core.timer.TimerServiceIntents
@@ -84,6 +85,8 @@ class BasicTimerNotifications(
     override fun foreground(state: TimerUiState): Notification = buildRunning(state)
 
     override fun refresh(state: TimerUiState, stateChanged: Boolean) {
+        // With no fade to recover, foreground removal follows this cancellation transition.
+        if (state.snapshot.isCancelling && state.snapshot.run?.fade == null) return
         if (stateChanged) {
             dismissedRun = null
             dismissal.edit { remove("run") }
@@ -168,7 +171,11 @@ class BasicTimerNotifications(
         val end = DateFormat.getTimeFormat(context).format(Date(endWall))
         val title = when (state.snapshot.phase) {
             TimerPhase.DEFERRED -> context.getString(R.string.waiting_for_call)
-            TimerPhase.STOPPING -> context.getString(R.string.stopping_playback)
+
+            TimerPhase.STOPPING -> context.getString(
+                if (state.snapshot.isCancelling) R.string.canceling_timer else R.string.stopping_playback,
+            )
+
             else -> context.getString(R.string.ends_at, end)
         }
         val minutes = (remaining / TimerLimits.MINUTE).toInt()

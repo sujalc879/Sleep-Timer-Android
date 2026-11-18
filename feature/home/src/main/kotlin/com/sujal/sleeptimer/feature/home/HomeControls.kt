@@ -57,7 +57,7 @@ internal fun HomeDial(
     val countdown = remember(formatter, displaySeconds) { formatter.format(current.displayMillis) }
     val end = stringResource(R.string.ends_at, DateFormat.getTimeFormat(context).format(Date(current.endWallMillis)))
     val endLabel = when (current.phase) {
-        TimerPhase.STOPPING -> stringResource(R.string.stopping)
+        TimerPhase.STOPPING -> stringResource(if (current.cancelling) R.string.canceling_timer else R.string.stopping)
         TimerPhase.DEFERRED -> stringResource(R.string.deferred)
         else -> end
     }

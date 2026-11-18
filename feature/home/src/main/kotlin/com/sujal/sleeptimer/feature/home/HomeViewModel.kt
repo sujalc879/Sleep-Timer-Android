@@ -15,6 +15,7 @@ import com.sujal.sleeptimer.core.model.SettingsStore
 import com.sujal.sleeptimer.core.model.TimerCommand
 import com.sujal.sleeptimer.core.model.TimerLimits
 import com.sujal.sleeptimer.core.model.TimerPhase
+import com.sujal.sleeptimer.core.model.isCancelling
 import com.sujal.sleeptimer.core.timer.NightlyController
 import com.sujal.sleeptimer.core.timer.TimerEngine
 import com.sujal.sleeptimer.core.timer.TimerGateway
@@ -80,6 +81,7 @@ class HomeViewModel @Inject constructor(
         HomeUiState(
             initialized = runtime.initialized,
             phase = snapshot.phase,
+            cancelling = snapshot.isCancelling,
             runId = run?.id,
             durationMillis = duration,
             remainingMillis = remaining,

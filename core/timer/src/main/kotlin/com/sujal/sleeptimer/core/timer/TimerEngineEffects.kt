@@ -27,6 +27,7 @@ import com.sujal.sleeptimer.core.model.WakeLease
 import com.sujal.sleeptimer.core.model.WakeLocks
 import com.sujal.sleeptimer.core.model.WarningMode
 import com.sujal.sleeptimer.core.model.isActive
+import com.sujal.sleeptimer.core.model.isCancelling
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException

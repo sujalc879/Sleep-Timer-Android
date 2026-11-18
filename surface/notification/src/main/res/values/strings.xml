@@ -6,6 +6,7 @@
     <string name="ends_at">Ends at %1$s</string>
     <string name="waiting_for_call">Waiting for call or alarm to end</string>
     <string name="stopping_playback">Stopping playback</string>
+    <string name="canceling_timer">Canceling timer</string>
     <string name="timer_needs_attention">Timer needs attention · open app</string>
     <string name="extend_action">+%1$d min</string>
     <string name="stop_action">Stop</string>

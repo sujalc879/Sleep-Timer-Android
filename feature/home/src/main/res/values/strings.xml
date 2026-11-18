@@ -28,6 +28,7 @@
     <string name="finished_failed">Playback could not be stopped</string>
     <string name="finished_interrupted">Your timer was interrupted</string>
     <string name="stopping">Stopping playback</string>
+    <string name="canceling_timer">Canceling timer</string>
     <string name="deferred">Waiting for call or alarm to end</string>
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.google.common.truth.Truth.assertThat
 import com.sujal.sleeptimer.core.designsystem.SleepTimerTheme
 import com.sujal.sleeptimer.core.model.TimerLimits
+import com.sujal.sleeptimer.core.model.TimerPhase
 import java.util.Locale
 import org.junit.Rule
 import org.junit.Test
@@ -49,6 +50,18 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class, qualifiers = "w390dp-h844dp-mdpi")
 class HomeUiTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun cancellationAndExpiryHaveDifferentStatusText() {
+        var state by mutableStateOf(homeFixture().copy(runId = "run", phase = TimerPhase.STOPPING, cancelling = true))
+        rule.setContent {
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(state, homeActions(), {}) }
+        }
+        rule.onNodeWithText("Canceling timer", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("Stopping playback", useUnmergedTree = true).assertDoesNotExist()
+        rule.runOnIdle { state = state.copy(cancelling = false) }
+        rule.onNodeWithText("Stopping playback", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("Canceling timer", useUnmergedTree = true).assertDoesNotExist()
+    }
 
     @Test fun aLocaleChangeUpdatesTheRememberedCountdownDigits() {
         val base = Configuration(rule.activity.resources.configuration)

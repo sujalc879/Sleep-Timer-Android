@@ -124,6 +124,9 @@ val TimerSnapshot.isActive: Boolean
         TimerPhase.DEFERRED,
     )
 
+val TimerSnapshot.isCancelling: Boolean
+    get() = phase == TimerPhase.STOPPING && lastResult?.status == StopStatus.CANCELLED && run != null
+
 data class TimerUiState(
     val initialized: Boolean = false,
     val snapshot: TimerSnapshot = TimerSnapshot(),
