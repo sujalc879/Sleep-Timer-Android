@@ -2,6 +2,8 @@
 
 November 19, 2026 (Asia/Kolkata). Working changes on `8cc6dc5`, left uncommitted for review.
 
+Follow-up [capture audit](PHASE6_HARNESS_RECOVERY.md) locates approximately 30 seconds of pre-measure frames in the oversized first candidate capture. Benchmark 1.5.0's raw frame matching reads the whole capture. The original raw results below remain unchanged; use their capture/window distinction when interpreting the percentiles.
+
 Manual Stop cancels the timer and leaves playback running. The engine durably marks this transition as STOPPING plus CANCELLED before cleanup returns to Idle. When no fade record exists, the notification controller now retains the ongoing notification until the service removes it, avoiding an unnecessary replacement titled Stopping playback. Cancellation with fade recovery still posts a status update, now labeled Canceling timer; Home uses the same distinction. Natural expiry continues to show Stopping playback.
 
 The shared cancellation predicate moved from core/timer to a pure model extension with identical logic. The notification presentation key includes cancellation so a Stop received during the existing STOPPING pipeline can also update recovery status. No serialized field/schema, timer command, alarm, audio pipeline or foreground-service lifetime changed. Posting and service removal remain synchronous; no asynchronous notification worker was added.

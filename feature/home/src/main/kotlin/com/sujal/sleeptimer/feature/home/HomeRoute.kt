@@ -44,7 +44,7 @@ fun HomeRoute(
     onSurfaceConsumed: (String) -> Unit = {},
 ) {
     val liveState = viewModel.state.collectAsStateWithLifecycle()
-    val state by viewModel.layoutState.collectAsStateWithLifecycle()
+    val state by rememberHomeLayoutState(liveState)
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }

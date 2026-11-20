@@ -3,6 +3,9 @@ package com.sujal.sleeptimer.feature.home
 import android.app.Application
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onRoot
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -35,6 +38,25 @@ class HomeScreenshotTest {
 
     @Test fun idleLight() = capture("idle-light", homeFixture(), false)
 
+    @Test fun warmedSymbolsMatchLightIdleAfterADarkRunningTransition() {
+        var state by mutableStateOf(homeFixture())
+        var dark by mutableStateOf(true)
+        rule.setContent {
+            SleepTimerTheme(dynamicColor = false, darkTheme = dark) { HomeScreen(state, homeActions(), {}) }
+        }
+        rule.mainClock.advanceTimeByFrame()
+        rule.runOnIdle {
+            state = state.copy(runId = "warm-symbols", remainingMillis = 30 * TimerLimits.MINUTE, progress = 1f)
+        }
+        rule.mainClock.advanceTimeBy(TRANSITION_SETTLE_MILLIS)
+        rule.runOnIdle {
+            state = homeFixture()
+            dark = false
+        }
+        rule.mainClock.advanceTimeBy(TRANSITION_SETTLE_MILLIS)
+        rule.onRoot().captureRoboImage("src/test/screenshots/home-idle-light.png")
+    }
+
     @Test fun runningDark() = capture(
         "running-dark",
         homeFixture().copy(
@@ -54,5 +76,9 @@ class HomeScreenshotTest {
         }
         rule.mainClock.advanceTimeByFrame()
         rule.onRoot().captureRoboImage("src/test/screenshots/home-$name.png")
+    }
+
+    private companion object {
+        const val TRANSITION_SETTLE_MILLIS = 2_000L
     }
 }

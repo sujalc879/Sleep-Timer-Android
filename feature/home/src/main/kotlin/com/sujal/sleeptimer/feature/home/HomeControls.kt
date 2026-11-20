@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,9 +48,10 @@ internal fun HomeDial(
     state: HomeUiState,
     actions: HomeActions,
     modifier: Modifier = Modifier,
-    liveState: State<HomeUiState>? = null,
+    liveState: HomeBranchState? = null,
 ) {
     val current = liveState?.value ?: state
+    SideEffect { liveState?.recordRendered(current) }
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
     val formatter = remember(locale) { CountdownFormatter(locale) }

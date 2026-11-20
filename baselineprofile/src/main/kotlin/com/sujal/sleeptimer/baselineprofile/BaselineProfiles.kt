@@ -23,10 +23,11 @@ class BaselineProfiles {
             "Use an API 33+ connected device for profile generation"
         }
         journey.prepareAccess()
+        journey.recoverToIdle()
     }
 
     @After fun cleanup() {
-        journey.stopTestPackage()
+        journey.cleanup()
     }
 
     @Test fun startup() = rule.collect(BuildConfig.TARGET_PACKAGE, includeInStartupProfile = true) {

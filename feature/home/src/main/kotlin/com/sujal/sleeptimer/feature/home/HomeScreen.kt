@@ -100,11 +100,16 @@ private fun HomeContent(
         val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Float>()
         SharedTransitionLayout(Modifier.fillMaxSize()) {
             AnimatedContent(
-                targetState = state.running,
+                targetState = state,
                 modifier = Modifier.fillMaxSize(),
                 transitionSpec = { fadeIn(effects) togetherWith fadeOut(effects) },
                 label = "timer-state",
-            ) { running ->
+                contentKey = { it.running },
+            ) { branch ->
+                val running = branch.running
+                val branchLive = remember(branch.runId, liveState) {
+                    liveState?.let { HomeBranchState(branch, it) }
+                }
                 val dialModifier = Modifier.sharedBounds(
                     rememberSharedContentState("timer-dial"),
                     this,
@@ -122,17 +127,17 @@ private fun HomeContent(
                 ).height(bodyHeight).padding(16.dp)
                 if (panes == null) {
                     HomePanels(
-                        state,
+                        branch,
                         actions,
                         running,
                         wide,
                         content,
                         Modifier.size(dialSize).then(dialModifier),
                         primaryModifier,
-                        liveState,
+                        branchLive,
                     )
                 } else {
-                    HingeHomePanels(state, actions, running, panes, current, primaryModifier, dialModifier, liveState)
+                    HingeHomePanels(branch, actions, running, panes, current, primaryModifier, dialModifier, branchLive)
                 }
             }
         }
@@ -183,7 +188,7 @@ private fun HomePanels(
     modifier: Modifier = Modifier,
     dialModifier: Modifier = Modifier,
     primaryModifier: Modifier = Modifier,
-    liveState: State<HomeUiState>? = null,
+    liveState: HomeBranchState? = null,
 ) {
     if (wide) {
         Row(

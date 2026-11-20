@@ -86,8 +86,9 @@ class HomeUiTest {
         val layout = live.value.forLayout()
         var screenCompositions = 0
         rule.setContent {
+            val currentLayout by rememberHomeLayoutState(live)
             SideEffect { screenCompositions++ }
-            SleepTimerTheme(dynamicColor = false) { HomeScreen(layout, homeActions(), {}, liveState = live) }
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(currentLayout, homeActions(), {}, liveState = live) }
         }
         rule.onNodeWithText("− 5 min").assertIsEnabled()
         val before = screenCompositions
@@ -98,6 +99,86 @@ class HomeUiTest {
             assertThat(screenCompositions).isEqualTo(before)
             assertThat(live.value.forLayout()).isEqualTo(layout)
         }
+    }
+
+    @Test fun anExitingRunKeepsItsLastRenderedCountdownUntilTheTransitionFinishes() {
+        rule.mainClock.autoAdvance = false
+        val live = mutableStateOf(
+            homeFixture().copy(
+                runId = "run",
+                phase = TimerPhase.RUNNING,
+                remainingMillis = (24 * 60 + 18) * TimerLimits.SECOND,
+                progress = 0.8f,
+            ),
+        )
+        rule.setContent {
+            val layout by rememberHomeLayoutState(live)
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(layout, homeActions(), {}, liveState = live) }
+        }
+        rule.onNodeWithText("24:18", useUnmergedTree = true).assertExists()
+        rule.runOnIdle {
+            live.value = live.value.copy(remainingMillis = live.value.remainingMillis - TimerLimits.SECOND)
+        }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(48)
+        rule.onNodeWithText("24:17", useUnmergedTree = true).assertExists()
+        rule.runOnIdle { live.value = homeFixture() }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(48)
+        rule.onNodeWithText("24:17", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithContentDescription("Stop").assertDoesNotExist()
+        rule.onNodeWithContentDescription("Start").assertExists()
+        rule.mainClock.advanceTimeBy(2_000)
+        rule.onNodeWithText("24:17", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun aQuickStartStopStartKeepsTheIdleExitAndReplacesTheOldRun() {
+        rule.mainClock.autoAdvance = false
+        val live = mutableStateOf(homeFixture())
+        rule.setContent {
+            val layout by rememberHomeLayoutState(live)
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(layout, homeActions(), {}, liveState = live) }
+        }
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+        rule.runOnIdle { live.value = live.value.copy(runId = "first", remainingMillis = 24 * TimerLimits.MINUTE) }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(48)
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("24:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithContentDescription("Start").assertDoesNotExist()
+        rule.runOnIdle { live.value = homeFixture() }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(48)
+        rule.runOnIdle { live.value = live.value.copy(runId = "second", remainingMillis = 45 * TimerLimits.MINUTE) }
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(48)
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("45:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("24:00", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithContentDescription("Stop").assertExists()
+        rule.onNodeWithContentDescription("Start").assertDoesNotExist()
+        rule.mainClock.advanceTimeBy(2_000)
+        rule.onNodeWithText("30:00", useUnmergedTree = true).assertDoesNotExist()
+        rule.onNodeWithText("45:00", useUnmergedTree = true).assertExists()
+    }
+
+    @Test fun aRestartWhileRunningUsesTheNewRunAndKeepsTicking() {
+        val live = mutableStateOf(homeFixture().copy(runId = "first", remainingMillis = 24 * TimerLimits.MINUTE))
+        rule.setContent {
+            val layout by rememberHomeLayoutState(live)
+            SleepTimerTheme(dynamicColor = false) { HomeScreen(layout, homeActions(), {}, liveState = live) }
+        }
+        rule.onNodeWithText("24:00", useUnmergedTree = true).assertExists()
+        rule.runOnIdle { live.value = live.value.copy(runId = "second", remainingMillis = 45 * TimerLimits.MINUTE) }
+        rule.onNodeWithText("45:00", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("24:00", useUnmergedTree = true).assertDoesNotExist()
+        rule.runOnIdle {
+            live.value = live.value.copy(remainingMillis = live.value.remainingMillis - TimerLimits.SECOND)
+        }
+        rule.onNodeWithText("44:59", useUnmergedTree = true).assertExists()
+        rule.onNodeWithText("− 5 min").assertIsEnabled()
     }
 
     @Test fun presetsKeyboardAndTalkBackRangeActionsChangeTheSameDuration() {

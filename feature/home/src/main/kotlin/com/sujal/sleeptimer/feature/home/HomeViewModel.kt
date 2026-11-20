@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -106,9 +104,6 @@ class HomeViewModel @Inject constructor(
             degradedReason = runtime.degradedReason,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), HomeUiState())
-
-    val layoutState = state.map(HomeUiState::forLayout).distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), HomeUiState())
 
     fun markExactRationaleShown() {
         viewModelScope.launch {

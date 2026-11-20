@@ -22,6 +22,6 @@ fun SleepTimerTheme(
         colorScheme = colorScheme,
         motionScheme = remember { MotionScheme.expressive() },
         typography = remember { Typography() },
-        content = content,
+        content = { ProvideSleepTimerSymbols(content) },
     )
 }

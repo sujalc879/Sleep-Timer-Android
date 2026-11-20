@@ -1,10 +1,21 @@
 package com.sujal.sleeptimer.core.designsystem
 
+import android.content.res.Resources
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
+import java.util.EnumMap
 
 enum class SleepTimerSymbol(internal val drawable: Int) {
     VOLUME_DOWN(R.drawable.ic_volume_down),
@@ -29,6 +40,26 @@ enum class SleepTimerSymbol(internal val drawable: Int) {
     SHARE(R.drawable.ic_share),
 }
 
+private class SymbolVectors {
+    private val vectors = EnumMap<SleepTimerSymbol, ImageVector>(SleepTimerSymbol::class.java)
+
+    @Synchronized
+    fun get(symbol: SleepTimerSymbol, resources: Resources, theme: Resources.Theme): ImageVector =
+        vectors.getOrPut(symbol) { ImageVector.vectorResource(theme, resources, symbol.drawable) }
+}
+
+private val LocalSymbolVectors = staticCompositionLocalOf<SymbolVectors?> { null }
+
+@Composable
+internal fun ProvideSleepTimerSymbols(content: @Composable () -> Unit) {
+    val resources = LocalResources.current
+    val theme = LocalContext.current.theme
+    val configuration = LocalConfiguration.current
+    // Only used symbols survive short-lived screen branches; old configurations are released.
+    val vectors = remember(resources, theme, configuration) { SymbolVectors() }
+    CompositionLocalProvider(LocalSymbolVectors provides vectors, content = content)
+}
+
 @Composable
 fun SleepTimerIcon(
     symbol: SleepTimerSymbol,
@@ -36,8 +67,14 @@ fun SleepTimerIcon(
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
 ) {
+    val vectors = LocalSymbolVectors.current
+    val painter = if (vectors == null) {
+        painterResource(symbol.drawable)
+    } else {
+        rememberVectorPainter(vectors.get(symbol, LocalResources.current, LocalContext.current.theme))
+    }
     Icon(
-        painterResource(symbol.drawable),
+        painter,
         description,
         modifier,
         tint = if (tint ==

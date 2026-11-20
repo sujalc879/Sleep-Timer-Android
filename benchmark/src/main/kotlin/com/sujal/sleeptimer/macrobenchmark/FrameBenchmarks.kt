@@ -23,10 +23,11 @@ class FrameBenchmarks {
 
     @Before fun prepare() {
         journey.prepareAccess()
+        journey.recoverToIdle()
     }
 
     @After fun cleanup() {
-        journey.stopTestPackage()
+        journey.cleanup()
     }
 
     @Test fun dialDrag() = frames(setup = { journey.awaitHome() }) { journey.dragDial() }
@@ -61,6 +62,8 @@ class FrameBenchmarks {
                     killProcess()
                     pressHome()
                     startActivityAndWait()
+                    journey.cancelIfRunning()
+                    journey.awaitHome()
                     setup()
                 },
                 measureBlock = measure,
